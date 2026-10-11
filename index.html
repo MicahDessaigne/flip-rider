@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<meta name="theme-color" content="#080b19">
+<meta name="theme-color" content="#0a0512">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Web Rider</title>
@@ -11,143 +11,151 @@
 <link rel="icon" href="icon.svg">
 <link rel="apple-touch-icon" href="icon.svg">
 <style>
-* { box-sizing:border-box }
-html,body {
-  margin:0;width:100%;height:100%;overflow:hidden;
-  background:#080b19;color:#fff;font-family:system-ui,sans-serif;
-  overscroll-behavior:none;-webkit-user-select:none;user-select:none;
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body {
+  margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;
+  background: #080310; color: #fff; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  user-select: none; -webkit-user-select: none; touch-action: none;
 }
 canvas {
-  display:block;width:100%;height:100%;touch-action:none;
+  position: fixed; inset: 0; width: 100%; height: 100%; display: block;
 }
-button {
-  font:inherit;font-weight:800;color:#fff;background:#14192d;
-  border:1px solid #46506a;border-radius:12px;
-  padding:12px 20px;cursor:pointer;touch-action:manipulation;
-}
-button:active { transform:scale(.97) }
-button.primary { background:#db153c;border-color:#ff5573 }
-button:disabled { opacity:.4 }
-.screen {
-  position:fixed;inset:0;display:none;
-  align-items:center;justify-content:center;
-  background:rgba(5,8,19,.78);
-  padding:max(18px,env(safe-area-inset-top))
-          max(18px,env(safe-area-inset-right))
-          max(18px,env(safe-area-inset-bottom))
-          max(18px,env(safe-area-inset-left));
-}
-.screen.visible { display:flex }
-.panel { text-align:center;max-width:640px;width:100% }
-h1 {
-  margin:0;color:#ff365c;font-size:clamp(36px,8vw,76px);
-  font-weight:950;letter-spacing:-2px;text-shadow:0 0 28px #ff174466;
-}
-h2 { margin:0 0 14px }
-p { color:#b7c2d9;line-height:1.5;margin:12px 0 20px }
-.row {
-  display:flex;justify-content:center;gap:10px;flex-wrap:wrap;
-}
-.score { font-size:clamp(44px,10vw,88px);font-weight:900 }
-.small { font-size:13px;color:#91a0bd }
 #hud {
-  position:fixed;left:0;right:0;top:0;display:none;
-  padding:max(12px,env(safe-area-inset-top)) 16px 0;
-  pointer-events:none;align-items:flex-start;justify-content:space-between;
-  text-shadow:0 2px 6px #000;font-weight:800;
+  position: fixed; inset: 0; pointer-events: none;
+  display: flex; flex-direction: column; justify-content: space-between;
+  padding: env(safe-area-inset-top, 16px) env(safe-area-inset-right, 20px) env(safe-area-inset-bottom, 20px) env(safe-area-inset-left, 20px);
 }
-#hud.visible { display:flex }
-#hud button { pointer-events:auto;padding:8px 13px;font-size:14px }
-#centerHud { text-align:center }
-#score { font-size:30px;line-height:1 }
-#distance { font-size:12px;color:#9aa9c3;margin-top:5px }
-#coins { color:#6dbbff;margin-top:6px }
-#toast {
-  position:fixed;left:15%;right:15%;bottom:max(38px,env(safe-area-inset-bottom));
-  text-align:center;font-size:clamp(18px,4vw,30px);font-weight:900;
-  color:#fff;text-shadow:0 2px 5px #000;pointer-events:none;
-  opacity:0;transition:opacity .12s;
+.hud-top {
+  display: flex; justify-content: space-between; align-items: flex-start;
 }
-#garageItems {
-  display:grid;grid-template-columns:repeat(2,1fr);
-  gap:10px;margin:16px 0;
+.score-box {
+  display: flex; flex-direction: column; align-items: center; width: 100%;
 }
-.skin {
-  border:1px solid #3a4360;border-radius:14px;padding:14px;
-  background:#111629;
+.score-num {
+  font-size: clamp(48px, 9vw, 84px); font-weight: 900; line-height: 0.95;
+  letter-spacing: -2px; color: #ffffff;
+  text-shadow: 0 0 25px rgba(255, 30, 70, 0.7), 0 4px 12px rgba(0,0,0,0.8);
 }
-.skin strong { display:block;margin-bottom:10px }
-#diagnostics {
-  position:fixed;bottom:8px;left:8px;white-space:pre;
-  font:11px monospace;color:#b6edff;background:#0009;
-  padding:6px;display:none;pointer-events:none;
+.dist-num {
+  font-size: 14px; font-weight: 700; color: #ff3366; letter-spacing: 2px; text-transform: uppercase; margin-top: 4px;
 }
+.gem-pill {
+  position: absolute; right: 20px; top: max(16px, env(safe-area-inset-top));
+  background: rgba(20, 10, 35, 0.75); border: 1.5px solid #00f0ff;
+  border-radius: 20px; padding: 6px 14px; font-weight: 800; font-size: 15px;
+  color: #00f0ff; display: flex; align-items: center; gap: 6px;
+  box-shadow: 0 0 16px rgba(0, 240, 255, 0.3);
+}
+.gem-icon {
+  display: inline-block; width: 10px; height: 10px; background: #00f0ff; transform: rotate(45deg);
+  box-shadow: 0 0 8px #00f0ff;
+}
+.stunt-banner {
+  position: fixed; left: 0; right: 0; top: 38%;
+  text-align: center; pointer-events: none; opacity: 0;
+  transform: translateY(15px) scale(0.9);
+  transition: opacity 0.2s cubic-bezier(0.1, 0.9, 0.2, 1), transform 0.2s cubic-bezier(0.1, 0.9, 0.2, 1);
+}
+.stunt-banner.show {
+  opacity: 1; transform: translateY(0) scale(1);
+}
+.stunt-text {
+  font-size: clamp(24px, 5vw, 44px); font-weight: 900; font-style: italic;
+  letter-spacing: 1px; color: #ffd500;
+  text-shadow: 0 0 25px #ff0055, 0 4px 8px #000;
+}
+.stunt-sub {
+  font-size: 15px; font-weight: 800; color: #fff; letter-spacing: 3px; text-transform: uppercase; margin-top: 4px;
+}
+.hint-tap {
+  font-size: 15px; font-weight: 800; color: rgba(255, 255, 255, 0.6);
+  letter-spacing: 3px; text-transform: uppercase; text-align: center; margin-bottom: 25px;
+  animation: pulse 1.2s ease-in-out infinite alternate;
+}
+@keyframes pulse { from { opacity: 0.3; } to { opacity: 0.95; } }
+.overlay {
+  position: fixed; inset: 0; background: rgba(8, 3, 16, 0.88);
+  display: none; flex-direction: column; align-items: center; justify-content: center;
+  padding: 24px; text-align: center; pointer-events: auto;
+}
+.overlay.active { display: flex; }
+.game-title {
+  font-size: clamp(48px, 11vw, 92px); font-weight: 950; font-style: italic; line-height: 0.9;
+  letter-spacing: -2px; margin: 0; color: #ff103f;
+  text-shadow: 0 0 40px #ff0055, 0 4px 16px #000;
+}
+.game-sub {
+  font-size: 14px; font-weight: 800; color: #00f0ff; letter-spacing: 5px;
+  text-transform: uppercase; margin: 12px 0 32px;
+}
+.btn-row {
+  display: flex; gap: 14px; flex-wrap: wrap; justify-content: center;
+}
+.btn {
+  background: #ff103f; color: #fff; border: none; outline: none;
+  font-family: inherit; font-size: 18px; font-weight: 900; letter-spacing: 2px;
+  text-transform: uppercase; padding: 14px 36px; border-radius: 40px;
+  box-shadow: 0 0 30px rgba(255, 16, 63, 0.55), 0 6px 14px rgba(0,0,0,0.5);
+  cursor: pointer; transform: translateZ(0); transition: transform 0.1s, box-shadow 0.1s;
+}
+.btn:active { transform: scale(0.96); box-shadow: 0 0 15px rgba(255, 16, 63, 0.8); }
+.btn-sec {
+  background: rgba(255,255,255,0.08); border: 2px solid rgba(255,255,255,0.25);
+  box-shadow: none; padding: 12px 28px;
+}
+.stat-grid {
+  margin: 22px 0 28px; display: flex; gap: 28px;
+}
+.stat-col { display: flex; flex-direction: column; align-items: center; }
+.stat-val { font-size: 32px; font-weight: 900; color: #fff; }
+.stat-lbl { font-size: 12px; font-weight: 800; color: rgba(255,255,255,0.5); letter-spacing: 2px; text-transform: uppercase; margin-top: 4px; }
 </style>
 </head>
 <body>
-<canvas id="game"></canvas>
+<canvas id="c"></canvas>
 
 <div id="hud">
-  <div>
-    <div id="best"></div>
-    <div id="coins"></div>
-  </div>
-  <div id="centerHud">
-    <div id="score">0</div>
-    <div id="distance">0 m</div>
-  </div>
-  <button id="pauseButton" aria-label="Pause">Ⅱ</button>
-</div>
-<div id="toast"></div>
-<div id="diagnostics"></div>
-
-<div id="menu" class="screen visible">
-  <div class="panel">
-    <h1>WEB RIDER</h1>
-    <p>
-      Hold to accelerate on the track.<br>
-      Hold in the air to backflip. Release to stop adding spin.<br>
-      Land on the wheels. Protect the head.
-    </p>
-    <div class="row">
-      <button class="primary" id="startButton">PLAY</button>
-      <button id="garageButton">GARAGE</button>
-      <button id="soundButton">SOUND ON</button>
+  <div class="hud-top">
+    <div></div>
+    <div class="score-box">
+      <div id="score" class="score-num">0</div>
+      <div id="dist" class="dist-num">0 M</div>
     </div>
-    <p class="small" id="menuStats"></p>
-  </div>
-</div>
-
-<div id="over" class="screen">
-  <div class="panel">
-    <h2 id="crashTitle">WIPEOUT</h2>
-    <div id="finalScore" class="score"></div>
-    <p id="runStats"></p>
-    <div class="row">
-      <button class="primary" id="retryButton">RETRY TRACK</button>
-      <button id="newButton">NEW TRACK</button>
-      <button id="homeButton">MENU</button>
+    <div class="gem-pill">
+      <span class="gem-icon"></span>
+      <span id="gems">0</span>
     </div>
   </div>
+  <div id="tapHint" class="hint-tap">HOLD TO ACCELERATE & FLIP</div>
 </div>
 
-<div id="paused" class="screen">
-  <div class="panel">
-    <h2>PAUSED</h2>
-    <div class="row">
-      <button class="primary" id="resumeButton">RESUME</button>
-      <button id="pauseHomeButton">MENU</button>
-    </div>
-    <p class="small">Keyboard: Space to hold · P to pause · D for diagnostics</p>
+<div id="stuntBanner" class="stunt-banner">
+  <div id="stuntTitle" class="stunt-text">NICE FLIPPING!</div>
+  <div id="stuntPts" class="stunt-sub">+100 PTS</div>
+</div>
+
+<div id="menuScreen" class="overlay active">
+  <h1 class="game-title">WEB<br><span style="color:#fff;text-shadow:0 0 35px #00f0ff;">RIDER</span></h1>
+  <div class="game-sub">NEON SPIDER EDITION</div>
+  <div class="stat-grid">
+    <div class="stat-col"><span id="bestScoreMenu" class="stat-val">0</span><span class="stat-lbl">BEST</span></div>
+    <div class="stat-col"><span id="totalGemsMenu" class="stat-val">0</span><span class="stat-lbl">GEMS</span></div>
+  </div>
+  <div class="btn-row">
+    <button id="playBtn" class="btn">RIDE</button>
   </div>
 </div>
 
-<div id="garage" class="screen">
-  <div class="panel">
-    <h2>GARAGE</h2>
-    <div id="garageBalance"></div>
-    <div id="garageItems"></div>
-    <button id="garageBackButton">BACK</button>
+<div id="overScreen" class="overlay">
+  <div style="font-size:20px;font-weight:900;letter-spacing:4px;color:#ff103f;margin-bottom:6px;">WIPEOUT</div>
+  <div id="finalScore" class="score-num" style="font-size:72px;">0</div>
+  <div class="stat-grid">
+    <div class="stat-col"><span id="bestFinal" class="stat-val">0</span><span class="stat-lbl">BEST</span></div>
+    <div class="stat-col"><span id="runDist" class="stat-val">0m</span><span class="stat-lbl">DISTANCE</span></div>
+    <div class="stat-col"><span id="runGems" class="stat-val" style="color:#00f0ff;">0</span><span class="stat-lbl">GEMS</span></div>
+  </div>
+  <div class="btn-row">
+    <button id="retryBtn" class="btn">AGAIN</button>
   </div>
 </div>
 
@@ -156,898 +164,827 @@ p { color:#b7c2d9;line-height:1.5;margin:12px 0 20px }
 'use strict';
 
 const $ = id => document.getElementById(id);
-const canvas = $('game');
-const ctx = canvas.getContext('2d', { alpha:false });
-
+const cv = $('c');
+const ctx = cv.getContext('2d');
 const TAU = Math.PI * 2;
-const clamp = (v,a,b) => Math.max(a,Math.min(b,v));
-const wrap = a => Math.atan2(Math.sin(a),Math.cos(a));
-const cross = (ax,ay,bx,by) => ax*by-ay*bx;
 
-/*
-  World coordinates use positive Y downward.
-  The board is one rigid body, with two circular wheel contacts.
-  No scripted flight path, landing-angle check, or auto-level force.
-*/
-const PHYS = Object.freeze({
-  dt:1/240,
-  gravity:1050,
-  inertia:680,
-  wheelRadius:8,
-  wheelX:23,
-  wheelY:10,
-  headY:-14,
-  headRadius:11,
-  drive:920,
-  topSpeed:650,
-  airTorque:8.2,
-  angularDrag:.25,
-  rollingDrag:.13,
-  airDrag:.015,
-  solverIterations:7
-});
-
-const WHEELS = [
-  { x:-PHYS.wheelX,y:PHYS.wheelY,r:PHYS.wheelRadius },
-  { x: PHYS.wheelX,y:PHYS.wheelY,r:PHYS.wheelRadius }
-];
-
-const SKINS = [
-  { name:'Crimson',color:'#ff3159',cost:0 },
-  { name:'Cyan',color:'#25dbff',cost:120 },
-  { name:'Gold',color:'#ffd54a',cost:120 },
-  { name:'Venom',color:'#80ef42',cost:250 }
-];
-
-let saved;
-try { saved=JSON.parse(localStorage.getItem('web-rider-rigid-v1')||'{}') }
-catch { saved={} }
-
-if (!saved || typeof saved!=='object') saved={};
-let store = {
-  best:Math.max(0,Number(saved.best)||0),
-  gems:Math.max(0,Number(saved.gems)||0),
-  skin:clamp(Math.floor(Number(saved.skin)||0),0,3),
-  owned:Array.isArray(saved.owned)
-    ? SKINS.map((_,i)=>i===0||saved.owned[i]===true)
-    : [true,false,false,false],
-  sound:saved.sound!==false
-};
-if (!store.owned[store.skin]) store.skin=0;
-
-function persist() {
-  try { localStorage.setItem('web-rider-rigid-v1',JSON.stringify(store)) }
-  catch {}
+// Audio Synth
+let actx = null;
+function initAudio() {
+  if (!actx) {
+    try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e){}
+  }
+  if (actx && actx.state === 'suspended') actx.resume();
+}
+function playSfx(type, opt={}) {
+  if (!actx) return;
+  const now = actx.currentTime;
+  if (type === 'gem') {
+    const osc = actx.createOscillator(), g = actx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(1200 + (opt.step||0)*160, now);
+    osc.frequency.exponentialRampToValueAtTime(1800, now + 0.08);
+    g.gain.setValueAtTime(0.08, now);
+    g.gain.linearRampToValueAtTime(0.001, now + 0.08);
+    osc.connect(g); g.connect(actx.destination);
+    osc.start(now); osc.stop(now + 0.08);
+  } else if (type === 'land') {
+    const osc = actx.createOscillator(), g = actx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(110, now);
+    osc.frequency.exponentialRampToValueAtTime(45, now + 0.1);
+    g.gain.setValueAtTime(0.12, now);
+    g.gain.linearRampToValueAtTime(0.001, now + 0.1);
+    osc.connect(g); g.connect(actx.destination);
+    osc.start(now); osc.stop(now + 0.1);
+  } else if (type === 'flip') {
+    const osc = actx.createOscillator(), g = actx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(320, now);
+    osc.frequency.exponentialRampToValueAtTime(860, now + 0.22);
+    g.gain.setValueAtTime(0.09, now);
+    g.gain.linearRampToValueAtTime(0.001, now + 0.22);
+    osc.connect(g); g.connect(actx.destination);
+    osc.start(now); osc.stop(now + 0.22);
+  } else if (type === 'crash') {
+    const osc = actx.createOscillator(), g = actx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(140, now);
+    osc.frequency.exponentialRampToValueAtTime(25, now + 0.45);
+    g.gain.setValueAtTime(0.2, now);
+    g.gain.linearRampToValueAtTime(0.001, now + 0.45);
+    osc.connect(g); g.connect(actx.destination);
+    osc.start(now); osc.stop(now + 0.45);
+  }
 }
 
-let audio;
-function unlockAudio() {
-  if (!store.sound) return;
-  try {
-    audio ||= new (window.AudioContext||window.webkitAudioContext)();
-    if (audio.state==='suspended') audio.resume().catch(()=>{});
-  } catch {}
-}
-function tone(freq,duration=.1,type='sine',volume=.045,end=freq) {
-  if (!store.sound || !audio || audio.state!=='running') return;
-  try {
-    const t=audio.currentTime;
-    const o=audio.createOscillator(),g=audio.createGain();
-    o.type=type;
-    o.frequency.setValueAtTime(freq,t);
-    o.frequency.exponentialRampToValueAtTime(Math.max(20,end),t+duration);
-    g.gain.setValueAtTime(volume,t);
-    g.gain.exponentialRampToValueAtTime(.0001,t+duration);
-    o.connect(g);g.connect(audio.destination);
-    o.start(t);o.stop(t+duration+.02);
-  } catch {}
-}
-function vibrate(ms) {
-  try { navigator.vibrate?.(ms) } catch {}
+// Storage
+let save = { best: 0, gems: 0 };
+try {
+  const d = JSON.parse(localStorage.getItem('rider_spidey_v1') || '{}');
+  if (d.best) save.best = d.best;
+  if (d.gems) save.gems = d.gems;
+} catch(e){}
+function commitSave() {
+  try { localStorage.setItem('rider_spidey_v1', JSON.stringify(save)); } catch(e){}
 }
 
-let width=0,height=0,dpr=1,zoom=1;
+// Display Sizing
+let W = innerWidth, H = innerHeight, DPR = Math.min(2, devicePixelRatio || 1);
 function resize() {
-  width=innerWidth;height=innerHeight;
-  dpr=Math.min(2,devicePixelRatio||1);
-  canvas.width=Math.round(width*dpr);
-  canvas.height=Math.round(height*dpr);
-  zoom=clamp(Math.min(width/940,height/510),.38,1.7);
+  W = innerWidth; H = innerHeight;
+  DPR = Math.min(2, devicePixelRatio || 1);
+  cv.width = W * DPR; cv.height = H * DPR;
+  cv.style.width = W + 'px'; cv.style.height = H + 'px';
 }
-addEventListener('resize',resize);
+addEventListener('resize', resize);
 resize();
 
-let randomState=1;
-function random() {
-  randomState=(Math.imul(randomState,1664525)+1013904223)>>>0;
-  return randomState/4294967296;
-}
-const range=(a,b)=>a+(b-a)*random();
-const hash=n=>{
-  const v=Math.sin(n*127.1+19.7)*43758.5453;
-  return v-Math.floor(v);
+// Rider Fast Physics Tunings (Real Rider Scale)
+const P = {
+  dt: 1 / 180,
+  substeps: 3,
+  gravity: 1850,
+  accel: 2400,        // High instantaneous thrust
+  maxSpeed: 1050,      // Lightning fast Rider velocity
+  airTorque: 14.5,     // Snappy mid-air rotations
+  angularDamp: 0.15,
+  friction: 0.998,
+  wheelDist: 26,       // Half distance between wheels
+  wheelR: 9,           // Radius
+  chassisH: 14,
+  headR: 12
 };
 
-let segments=[],buckets=new Map(),gems=[],saws=[];
-let gx=0,gy=0,pieceNumber=0,trackSeed=1;
-const BUCKET=128;
+// Track Building: Modular Neon Polygon Platforms (Authentic Ketchapp Style)
+let platforms = [];
+let gems = [];
+let saws = [];
+let genX = 0, genY = 0;
+let trackSeed = 1;
+const rnd = () => {
+  trackSeed = (Math.imul(trackSeed, 1664525) + 1013904223) >>> 0;
+  return trackSeed / 4294967296;
+};
+const R = (a, b) => a + (b - a) * rnd();
 
-function addSegment(x1,y1,x2,y2) {
-  const dx=x2-x1,dy=y2-y1,len2=dx*dx+dy*dy;
-  if (len2<.0001) return;
-  const s={x1,y1,x2,y2,dx,dy,len2};
-  segments.push(s);
-  const lo=Math.floor(Math.min(x1,x2)/BUCKET);
-  const hi=Math.floor(Math.max(x1,x2)/BUCKET);
-  for (let i=lo;i<=hi;i++) {
-    if (!buckets.has(i)) buckets.set(i,[]);
-    buckets.get(i).push(s);
-  }
-}
-function to(x,y) {
-  addSegment(gx,gy,x,y);
-  gx=x;gy=y;
-}
-function curve(length,fn,collect=false) {
-  const x0=gx,y0=gy;
-  const count=Math.max(2,Math.ceil(length/13));
-  for (let i=1;i<=count;i++) {
-    const t=i/count;
-    to(x0+length*t,y0+fn(t));
-    if (collect && i%4===0 && i<count-2) {
-      gems.push({x:gx,y:gy-44,taken:false});
-    }
-  }
-}
-function flat(length,collect=true) {
-  curve(length,()=>0,collect);
-}
-function hills() {
-  const length=range(580,900),h=range(45,85);
-  curve(length,t=>-h*(1-Math.cos(TAU*t))/2,true);
-}
-function ramp(withGap) {
-  const rise=range(65,95),run=range(250,310);
-  curve(run,t=>-rise*t*t);
+// Palette rotation every few obstacles like Rider
+const THEMES = [
+  { neon: '#ff0055', fill: '#14030d', glow: 'rgba(255, 0, 85, 0.45)' },
+  { neon: '#00f0ff', fill: '#011219', glow: 'rgba(0, 240, 255, 0.45)' },
+  { neon: '#ffe600', fill: '#181402', glow: 'rgba(255, 230, 0, 0.45)' },
+  { neon: '#8400ff', fill: '#0f0219', glow: 'rgba(132, 0, 255, 0.45)' },
+  { neon: '#00ff66', fill: '#011909', glow: 'rgba(0, 255, 102, 0.45)' }
+];
+let curThemeIdx = 0;
 
-  const ex=gx,ey=gy;
-  const launchAngle=-Math.atan(2*rise/run);
-  const speed=540;
-  const vx=Math.cos(launchAngle)*speed;
-  const vy=Math.sin(launchAngle)*speed;
-
-  const gap=withGap?range(105,150):0;
-  const drop=withGap?range(45,65):range(100,145);
-
-  if (withGap) {
-    saws.push({x:ex+gap*.52,y:ey+drop+55,r:23});
-    gx+=gap;gy+=drop;
-  }
-
-  const landingLength=range(360,440);
-  const descent=withGap?range(25,45):drop;
-  curve(landingLength,t=>descent*(2*t-t*t),true);
-
-  for (let i=1;i<=6;i++) {
-    const t=i*.095;
-    gems.push({
-      x:ex+vx*t,
-      y:ey-35+vy*t+.5*PHYS.gravity*t*t,
-      taken:false
-    });
-  }
-}
-function loop() {
-  const r=155,startX=gx,startY=gy;
-  const cx=startX,cy=startY-r;
-  const count=110;
-
-  // Travel clockwise from the bottom, inside the circle.
-  for (let i=1;i<=count;i++) {
-    const a=Math.PI/2-TAU*i/count;
-    to(cx+Math.cos(a)*r,cy+Math.sin(a)*r);
-    if (i%10===0) {
-      gems.push({
-        x:cx+Math.cos(a)*(r-42),
-        y:cy+Math.sin(a)*(r-42),
-        taken:false
+function addPlatform(pts, theme) {
+  // Poly platform with top edge and closed polygon base
+  const segs = [];
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p1 = pts[i], p2 = pts[i+1];
+    const dx = p2.x - p1.x, dy = p2.y - p1.y;
+    const len = Math.hypot(dx, dy);
+    if (len > 0.1) {
+      segs.push({
+        x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y,
+        dx, dy, len,
+        nx: -dy / len, ny: dx / len // Normal pointing outwards
       });
     }
   }
-  // Return exactly to the tangent point before continuing.
-  gx=startX;gy=startY;
-  flat(r+160,true);
-}
-function generate(until) {
-  while (gx<until) {
-    pieceNumber++;
-    flat(range(170,270));
-    if (gy>170) {
-      curve(700,t=>-150*(1-Math.cos(Math.PI*t))/2,true);
-      continue;
-    }
-    if (pieceNumber===1) {
-      hills();
-    } else if (pieceNumber===2) {
-      ramp(false);
-    } else if (pieceNumber===3) {
-      ramp(true);
-    } else if (pieceNumber>8 && pieceNumber%9===0) {
-      flat(500,true);
-      loop();
-    } else {
-      const r=random();
-      if (r<.42) hills();
-      else if (r<.74) ramp(false);
-      else ramp(true);
-    }
-  }
-}
-function resetTrack(seed) {
-  randomState=seed>>>0;
-  segments=[];buckets=new Map();gems=[];saws=[];
-  pieceNumber=0;gx=-700;gy=0;
-  flat(1750,true);
-  generate(3600);
+  platforms.push({ pts, segs, theme });
 }
 
-function nearby(x,r=45) {
-  const found=new Set();
-  const a=Math.floor((x-r)/BUCKET);
-  const b=Math.floor((x+r)/BUCKET);
-  for (let i=a;i<=b;i++) {
-    for (const s of buckets.get(i)||[]) found.add(s);
+function spawnGemsArc(p1, p2, peakH, count) {
+  for (let i = 1; i <= count; i++) {
+    const t = i / (count + 1);
+    const x = p1.x + (p2.x - p1.x) * t;
+    const baseY = p1.y + (p2.y - p1.y) * t;
+    const y = baseY - peakH * Math.sin(Math.PI * t);
+    gems.push({ x, y, taken: false });
   }
-  return found;
-}
-function closest(s,x,y) {
-  const t=clamp(((x-s.x1)*s.dx+(y-s.y1)*s.dy)/s.len2,0,1);
-  return {x:s.x1+t*s.dx,y:s.y1+t*s.dy};
 }
 
-let body;
-function localPoint(x,y) {
-  const c=Math.cos(body.a),s=Math.sin(body.a);
-  const rx=x*c-y*s,ry=x*s+y*c;
-  return {x:body.x+rx,y:body.y+ry,rx,ry};
-}
-function wheelContact(w,localSegments) {
-  const p=localPoint(w.x,w.y);
-  let best=null;
-  for (const seg of localSegments) {
-    const q=closest(seg,p.x,p.y);
-    const dx=p.x-q.x,dy=p.y-q.y;
-    const distance=Math.hypot(dx,dy);
-    const depth=w.r-distance;
-    if (depth<=0) continue;
-    if (!best || depth>best.depth) {
-      let nx,ny;
-      if (distance>.00001) {
-        nx=dx/distance;ny=dy/distance;
-      } else {
-        const length=Math.sqrt(seg.len2);
-        nx=seg.dy/length;ny=-seg.dx/length;
-      }
-      const rx=p.rx-nx*w.r;
-      const ry=p.ry-ny*w.r;
-      const rn=cross(rx,ry,nx,ny);
-      best={
-        nx,ny,rx,ry,rn,depth,
-        effective:1+rn*rn/PHYS.inertia,
-        accumulated:0
-      };
-    }
+// Modular Rider Obstacle Constructors
+function buildFlat(len) {
+  const t = THEMES[curThemeIdx % THEMES.length];
+  const pts = [
+    { x: genX, y: genY },
+    { x: genX + len, y: genY },
+    { x: genX + len, y: genY + 180 },
+    { x: genX, y: genY + 180 }
+  ];
+  addPlatform(pts, t);
+  for (let gx = genX + 70; gx < genX + len - 50; gx += 70) {
+    gems.push({ x: gx, y: genY - 32, taken: false });
   }
-  return best;
-}
-function circleHits(x,y,r,localSegments) {
-  for (const seg of localSegments) {
-    const q=closest(seg,x,y);
-    if ((x-q.x)**2+(y-q.y)**2<r*r) return true;
-  }
-  return false;
+  genX += len;
 }
 
-let state='menu';
-let time=0,runTime=0,bonus=0,runGems=0,maxX=100;
-let airTime=0,airRotation=0,landing=null;
-let lastSupportY=0,wheelPhase=0,shake=0;
-let toastTime=0,toastText='',diagnostics=false;
-let camera={x:100,y:-85};
-let elapsed=0,lastFrame=performance.now();
-let particles=[];
-let heldKeys=new Set(),pointers=new Set();
-
-function held() {
-  return state==='play' && (heldKeys.size>0 || pointers.size>0);
-}
-function clearInput() {
-  heldKeys.clear();pointers.clear();
-}
-function distance() { return Math.max(0,(maxX-100)/10) }
-function score() { return Math.floor(distance())+bonus }
-function showToast(text,duration=1.5) {
-  toastText=text;toastTime=duration;
-  $('toast').textContent=text;
-}
-function setScreen(next) {
-  state=next;
-  clearInput();
-  for (const name of ['menu','over','paused','garage']) {
-    $(name).classList.toggle('visible',name===next);
-  }
-  $('hud').classList.toggle('visible',next==='play'||next==='paused');
-  $('toast').style.opacity='0';
-  updateMenu();
-}
-function updateMenu() {
-  $('menuStats').textContent=`BEST ${store.best} · ◆ ${store.gems}`;
-  $('soundButton').textContent=store.sound?'SOUND ON':'SOUND OFF';
-}
-function freshSeed() {
-  return (Math.random()*4294967296)>>>0;
-}
-function start(seed=trackSeed) {
-  trackSeed=seed;
-  resetTrack(seed);
-  body={
-    x:100,y:-18,vx:0,vy:0,a:0,w:0,
-    grounded:false,contactCount:0
-  };
-  camera={x:100,y:-85};
-  runTime=0;bonus=0;runGems=0;maxX=100;
-  airTime=0;airRotation=0;landing=null;
-  lastSupportY=0;wheelPhase=0;shake=0;
-  particles=[];toastTime=0;elapsed=0;
-  unlockAudio();
-  setScreen('play');
-}
-function burst(x,y,color,count=12) {
-  for (let i=0;i<count;i++) {
-    particles.push({
-      x,y,vx:range(-180,180),vy:range(-250,100),
-      life:range(.25,.65),color
+function buildUpRamp() {
+  const t = THEMES[curThemeIdx % THEMES.length];
+  const len = R(420, 600), rise = R(140, 220);
+  const steps = 14;
+  const topPts = [];
+  for (let i = 0; i <= steps; i++) {
+    const u = i / steps;
+    topPts.push({
+      x: genX + len * u,
+      y: genY - rise * Math.pow(u, 1.8)
     });
   }
+  const last = topPts[topPts.length - 1];
+  const pts = [
+    ...topPts,
+    { x: last.x, y: genY + 220 },
+    { x: genX, y: genY + 220 }
+  ];
+  addPlatform(pts, t);
+  genX = last.x; genY = last.y;
 }
-function crash(reason) {
-  if (state!=='play') return;
-  const result=score(),isBest=result>store.best;
-  store.best=Math.max(store.best,result);
-  persist();
-  burst(body.x,body.y,SKINS[store.skin].color,25);
-  shake=10;
-  tone(150,.32,'sawtooth',.09,35);
-  vibrate(90);
-  $('crashTitle').textContent=isBest?'NEW BEST':'WIPEOUT';
-  $('finalScore').textContent=result;
-  $('runStats').textContent=
-    `${Math.floor(distance())} m · ◆ ${runGems} · ${reason}`;
-  setScreen('over');
-}
-function awardLanding() {
-  if (!landing) return;
-  const flips=Math.floor((Math.abs(landing.rotation)+.12)/TAU);
-  if (flips>0) {
-    const points=100*flips*flips;
-    bonus+=points;
-    const name=flips===1?'BACKFLIP':
-      flips===2?'DOUBLE BACKFLIP':
-      flips===3?'TRIPLE BACKFLIP':`${flips}× BACKFLIP`;
-    showToast(`${name} +${points}`);
-    tone(620,.15,'triangle',.07,1100);
+
+function buildBigJump() {
+  const t = THEMES[curThemeIdx % THEMES.length];
+  // 1. Ramp kicker
+  const rampLen = 380, rampRise = 160;
+  const rampPts = [];
+  for (let i = 0; i <= 10; i++) {
+    const u = i / 10;
+    rampPts.push({ x: genX + rampLen * u, y: genY - rampRise * (u*u) });
   }
-  landing=null;
+  const lip = rampPts[rampPts.length - 1];
+  addPlatform([
+    ...rampPts,
+    { x: lip.x, y: genY + 250 },
+    { x: genX, y: genY + 250 }
+  ], t);
+
+  // 2. Air gap with spinning saw hazard below
+  const gap = R(340, 480);
+  const drop = R(120, 240);
+  saws.push({ x: lip.x + gap * 0.5, y: lip.y + drop + 80, r: 40 });
+
+  // Arching gems
+  spawnGemsArc(lip, { x: lip.x + gap, y: lip.y + drop }, 140, 6);
+
+  // 3. Smooth descending landing ramp
+  const landX = lip.x + gap, landY = lip.y + drop;
+  const landLen = 520, landDown = 80;
+  const landPts = [];
+  for (let i = 0; i <= 12; i++) {
+    const u = i / 12;
+    landPts.push({
+      x: landX + landLen * u,
+      y: landY + landDown * (1 - Math.cos(Math.PI * u * 0.5))
+    });
+  }
+  const landEnd = landPts[landPts.length - 1];
+  curThemeIdx++;
+  const t2 = THEMES[curThemeIdx % THEMES.length];
+  addPlatform([
+    ...landPts,
+    { x: landEnd.x, y: landY + 300 },
+    { x: landX, y: landY + 300 }
+  ], t2);
+
+  genX = landEnd.x; genY = landEnd.y;
+}
+
+function buildHalfPipeValley() {
+  const t = THEMES[curThemeIdx % THEMES.length];
+  const len = R(800, 1100), depth = R(160, 260);
+  const steps = 24;
+  const topPts = [];
+  for (let i = 0; i <= steps; i++) {
+    const u = i / steps;
+    topPts.push({
+      x: genX + len * u,
+      y: genY + depth * Math.sin(Math.PI * u)
+    });
+  }
+  const last = topPts[topPts.length - 1];
+  addPlatform([
+    ...topPts,
+    { x: last.x, y: genY + depth + 200 },
+    { x: genX, y: genY + depth + 200 }
+  ], t);
+  for (let i = 2; i < steps - 2; i += 2) {
+    gems.push({ x: topPts[i].x, y: topPts[i].y - 35, taken: false });
+  }
+  genX = last.x; genY = last.y;
+}
+
+function buildLoopDeLoop() {
+  curThemeIdx++;
+  const t = THEMES[curThemeIdx % THEMES.length];
+  const r = 180;
+  const cx = genX + r + 40, cy = genY - r;
+  const steps = 44;
+  const loopPts = [];
+  // Tangent entry at 6 o'clock: angle = PI/2. Loops full circle clockwise
+  for (let i = 0; i <= steps; i++) {
+    const a = Math.PI / 2 - (TAU * i / steps);
+    loopPts.push({
+      x: cx + Math.cos(a) * r,
+      y: cy + Math.sin(a) * r
+    });
+    if (i % 5 === 0 && i > 0 && i < steps) {
+      gems.push({ x: cx + Math.cos(a) * (r - 45), y: cy + Math.sin(a) * (r - 45), taken: false });
+    }
+  }
+  // Add as an open track platform strip
+  const loopBase = [];
+  for (let i = loopPts.length - 1; i >= 0; i--) {
+    const p = loopPts[i];
+    const dx = p.x - cx, dy = p.y - cy, d = Math.hypot(dx, dy);
+    loopBase.push({ x: cx + (dx/d)*(r + 30), y: cy + (dy/d)*(r + 30) });
+  }
+  addPlatform([...loopPts, ...loopBase], t);
+
+  genX = cx + r + 40;
+  buildFlat(400);
+}
+
+function generateTrackUntil(targetX) {
+  while (genX < targetX) {
+    buildFlat(R(250, 420));
+    const r = rnd();
+    if (r < 0.35) {
+      buildUpRamp();
+      buildBigJump();
+    } else if (r < 0.65) {
+      buildHalfPipeValley();
+    } else if (r < 0.85) {
+      buildBigJump();
+    } else {
+      buildFlat(350);
+      buildLoopDeLoop();
+    }
+    curThemeIdx++;
+  }
+}
+
+// Game State
+let state = 'menu'; // 'menu', 'play', 'over'
+let car = {
+  x: 120, y: -40,
+  vx: 0, vy: 0,
+  angle: 0,
+  spin: 0,
+  grounded: false,
+  groundTimer: 0,
+  airTimer: 0,
+  airRot: 0,
+  flipsEarned: 0
+};
+let inputHeld = false;
+let score = 0, distanceM = 0, sessionGems = 0;
+let cam = { x: 120, y: -40, leadX: 200, zoom: 0.9 };
+let particles = [];
+let trails = [];
+let sawAngle = 0;
+let stuntTimer = 0;
+
+function resetRun(seed) {
+  trackSeed = seed;
+  platforms = [];
+  gems = [];
+  saws = [];
+  particles = [];
+  trails = [];
+  genX = -400; genY = 0;
+  curThemeIdx = 0;
+  buildFlat(1200);
+  generateTrackUntil(3500);
+
+  car.x = 180; car.y = -25;
+  car.vx = 0; car.vy = 0;
+  car.angle = 0; car.spin = 0;
+  car.grounded = false; car.groundTimer = 0;
+  car.airTimer = 0; car.airRot = 0; car.flipsEarned = 0;
+
+  cam.x = car.x; cam.y = car.y;
+  score = 0; distanceM = 0; sessionGems = 0;
+  $('score').textContent = '0';
+  $('dist').textContent = '0 M';
+  $('gems').textContent = save.gems;
+  hideStunt();
+}
+
+function showStunt(title, pts) {
+  const banner = $('stuntBanner');
+  $('stuntTitle').textContent = title;
+  $('stuntPts').textContent = `+${pts} PTS`;
+  banner.classList.add('show');
+  clearTimeout(stuntTimer);
+  stuntTimer = setTimeout(() => banner.classList.remove('show'), 1200);
+}
+function hideStunt() {
+  $('stuntBanner').classList.remove('show');
+}
+
+// Segment Collision Check
+function checkCircleSegment(cx, cy, r, seg) {
+  const vx = cx - seg.x1, vy = cy - seg.y1;
+  const t = Math.max(0, Math.min(1, (vx * seg.dx + vy * seg.dy) / (seg.len * seg.len)));
+  const px = seg.x1 + t * seg.dx, py = seg.y1 + t * seg.dy;
+  const dist = Math.hypot(cx - px, cy - py);
+  if (dist < r) {
+    return {
+      hit: true,
+      pen: r - dist,
+      nx: (cx - px) / (dist || 1),
+      ny: (cy - py) / (dist || 1),
+      px, py
+    };
+  }
+  return null;
 }
 
 function physicsStep(dt) {
-  if (state!=='play') return;
-  runTime+=dt;
+  if (state !== 'play') return;
 
-  // Forces affect velocity; they never prescribe position or orientation.
-  body.vy+=PHYS.gravity*dt;
-  if (held()) {
-    if (body.grounded) {
-      const c=Math.cos(body.a),s=Math.sin(body.a);
-      const forward=body.vx*c+body.vy*s;
-      const available=clamp((PHYS.topSpeed-forward)/140,0,1);
-      body.vx+=c*PHYS.drive*available*dt;
-      body.vy+=s*PHYS.drive*available*dt;
+  // 1. Gravity & Motor Forces
+  car.vy += P.gravity * dt;
+
+  if (inputHeld) {
+    if (car.grounded) {
+      // Rapid acceleration forward along vehicle facing
+      const fwdX = Math.cos(car.angle), fwdY = Math.sin(car.angle);
+      const curSpeed = car.vx * fwdX + car.vy * fwdY;
+      if (curSpeed < P.maxSpeed) {
+        car.vx += fwdX * P.accel * dt;
+        car.vy += fwdY * P.accel * dt;
+      }
     } else {
-      // Gradual torque reduction at very high spin, not a target spin rate.
-      const factor=1/(1+(Math.abs(body.w)/10)**4);
-      body.w-=PHYS.airTorque*factor*dt;
+      // Crisp Rider Mid-Air Flip Torque (backflip rotation)
+      car.spin -= P.airTorque * dt;
+      car.airRot += -P.airTorque * dt;
     }
   }
 
-  const drag=body.grounded?PHYS.rollingDrag:PHYS.airDrag;
-  body.vx*=Math.exp(-drag*dt);
-  body.w*=Math.exp(-PHYS.angularDrag*dt);
+  // Angular dampening & friction
+  car.spin *= Math.pow(P.angularDamp, dt);
+  car.angle += car.spin * dt;
 
-  const previousAngle=body.a;
-  body.x+=body.vx*dt;
-  body.y+=body.vy*dt;
-  body.a+=body.w*dt;
+  car.x += car.vx * dt;
+  car.y += car.vy * dt;
 
-  let localSegments=nearby(body.x,55);
-  const contacts=[];
-  for (const wheel of WHEELS) {
-    const contact=wheelContact(wheel,localSegments);
-    if (contact) contacts.push(contact);
-  }
+  // 2. Wheels Collision
+  const cos = Math.cos(car.angle), sin = Math.sin(car.angle);
+  const wBack = {
+    x: car.x - cos * P.wheelDist + sin * P.wheelR,
+    y: car.y - sin * P.wheelDist - cos * P.wheelR,
+    rx: -cos * P.wheelDist, ry: -sin * P.wheelDist
+  };
+  const wFront = {
+    x: car.x + cos * P.wheelDist + sin * P.wheelR,
+    y: car.y + sin * P.wheelDist - cos * P.wheelR,
+    rx: cos * P.wheelDist, ry: sin * P.wheelDist
+  };
 
-  // Unilateral impulses: the track can push a wheel, never pull it.
-  for (let iteration=0;iteration<PHYS.solverIterations;iteration++) {
-    for (const c of contacts) {
-      const vx=body.vx-body.w*c.ry;
-      const vy=body.vy+body.w*c.rx;
-      const vn=vx*c.nx+vy*c.ny;
-      const bias=Math.min(45,.12*Math.max(0,c.depth-.15)/dt);
-      const impulse=(bias-vn)/c.effective;
-      const next=Math.max(0,c.accumulated+impulse);
-      const applied=next-c.accumulated;
-      c.accumulated=next;
-      body.vx+=c.nx*applied;
-      body.vy+=c.ny*applied;
-      body.w+=c.rn*applied/PHYS.inertia;
-    }
-  }
+  let wasGrounded = car.grounded;
+  let wheelContacts = 0;
 
-  // Small position corrections remove overlap without snapping to a slope.
-  for (let iteration=0;iteration<3;iteration++) {
-    for (const wheel of WHEELS) {
-      const c=wheelContact(wheel,localSegments);
-      if (!c) continue;
-      const correction=.38*Math.max(0,c.depth-.12)/c.effective;
-      body.x+=c.nx*correction;
-      body.y+=c.ny*correction;
-      body.a+=c.rn*correction/PHYS.inertia;
-    }
-  }
+  // Test wheel collisions against nearby platforms
+  for (const plat of platforms) {
+    if (plat.pts[1].x < car.x - 300 || plat.pts[0].x > car.x + 300) continue;
+    for (const seg of plat.segs) {
+      for (const w of [wBack, wFront]) {
+        const col = checkCircleSegment(w.x, w.y, P.wheelR, seg);
+        if (col) {
+          wheelContacts++;
+          // Push out
+          car.x += col.nx * col.pen * 0.7;
+          car.y += col.ny * col.pen * 0.7;
 
-  const wasGrounded=body.grounded;
-  body.grounded=contacts.length>0;
-  body.contactCount=contacts.length;
-
-  if (!body.grounded) {
-    if (wasGrounded) {
-      airTime=0;airRotation=0;
-    }
-    airTime+=dt;
-    airRotation+=body.a-previousAngle;
-    if (landing) {
-      landing.groundedTime=0;
-      landing.life-=dt;
-      if (landing.life<=0) landing=null;
-    }
-  } else {
-    lastSupportY=body.y;
-    if (!wasGrounded && airTime>.18) {
-      landing={
-        rotation:airRotation,
-        groundedTime:0,
-        life:.55
-      };
-      tone(85,.055,'sine',.025,45);
-    }
-    airTime=0;airRotation=0;
-    if (landing) {
-      landing.groundedTime+=dt;
-      if (landing.groundedTime>.14) awardLanding();
-    }
-  }
-
-  const head=localPoint(0,PHYS.headY);
-  if (circleHits(head.x,head.y,PHYS.headRadius,localSegments)) {
-    crash('Head impact');return;
-  }
-
-  for (const x of [-31,0,31]) {
-    const chassis=localPoint(x,3);
-    if (circleHits(chassis.x,chassis.y,3,localSegments)) {
-      crash('Board impact');return;
-    }
-  }
-
-  for (const saw of saws) {
-    if (Math.abs(saw.x-body.x)>75) continue;
-    if (Math.hypot(body.x-saw.x,body.y-saw.y)<saw.r+16 ||
-        Math.hypot(head.x-saw.x,head.y-saw.y)<saw.r+PHYS.headRadius) {
-      crash('Saw impact');return;
-    }
-  }
-
-  if (body.y>lastSupportY+650) {
-    crash('Missed the track');return;
-  }
-
-  maxX=Math.max(maxX,body.x);
-  wheelPhase+=body.vx*dt/PHYS.wheelRadius;
-
-  for (const gem of gems) {
-    if (gem.taken || Math.abs(gem.x-body.x)>60) continue;
-    if (Math.hypot(head.x-gem.x,head.y-gem.y)<27 ||
-        Math.hypot(body.x-gem.x,body.y-gem.y)<25) {
-      gem.taken=true;
-      runGems++;store.gems++;bonus+=5;
-      burst(gem.x,gem.y,'#65baff',5);
-      tone(950+(runGems%5)*110,.065,'triangle',.025);
-    }
-  }
-
-  if (gx<body.x+2500) generate(body.x+3500);
-
-  // Retain a generous window behind the player for reverse movement.
-  if (segments.length>2200 && runTime%2<dt) {
-    const cutoff=body.x-3500;
-    segments=segments.filter(s=>Math.max(s.x1,s.x2)>cutoff);
-    gems=gems.filter(g=>g.x>cutoff);
-    saws=saws.filter(s=>s.x>cutoff);
-    for (const key of buckets.keys()) {
-      if ((key+1)*BUCKET<cutoff) buckets.delete(key);
-    }
-  }
-}
-
-function background() {
-  const g=ctx.createLinearGradient(0,0,0,height);
-  g.addColorStop(0,'#080b19');
-  g.addColorStop(.65,'#11112c');
-  g.addColorStop(1,'#23112c');
-  ctx.fillStyle=g;ctx.fillRect(0,0,width,height);
-
-  ctx.fillStyle='#d9e2ff';
-  ctx.globalAlpha=.65;
-  for (let i=0;i<48;i++) {
-    const x=hash(i*3)*width;
-    const y=hash(i*3+1)*height*.57;
-    ctx.fillRect(x,y,hash(i*3+2)> .75?2:1,1);
-  }
-  ctx.globalAlpha=1;
-
-  ctx.fillStyle='#d6ddf014';
-  ctx.beginPath();
-  ctx.arc(width*.79,height*.19,Math.min(width,height)*.065,0,TAU);
-  ctx.fill();
-
-  const layers=[
-    {scale:.06,color:'#11152a',base:.73,bw:60,h:150},
-    {scale:.13,color:'#0b1020',base:.86,bw:85,h:185},
-    {scale:.22,color:'#070c18',base:1,bw:110,h:220}
-  ];
-  for (let li=0;li<layers.length;li++) {
-    const l=layers[li];
-    const off=camera.x*l.scale;
-    const first=Math.floor(off/l.bw)-1;
-    const base=height*l.base;
-    for (let i=first;i*l.bw-off<width+l.bw;i++) {
-      const x=i*l.bw-off;
-      const h=(.35+.65*hash(i+li*211))*l.h;
-      ctx.fillStyle=l.color;
-      ctx.fillRect(x,base-h,l.bw-3,height);
-      if (li===1) {
-        ctx.fillStyle='#e6c37724';
-        for (let col=0;col<5;col++) {
-          for (let row=0;row<7;row++) {
-            if (hash(i*83+col*11+row)<.55) continue;
-            const y=base-h+13+row*19;
-            if (y<base-10) ctx.fillRect(x+10+col*14,y,3,5);
+          // Normal & Tangent Velocity Resolution
+          const vn = car.vx * col.nx + car.vy * col.ny;
+          if (vn < 0) {
+            car.vx -= col.nx * vn * 1.05;
+            car.vy -= col.ny * vn * 1.05;
           }
+          // Surface friction
+          car.vx *= Math.pow(P.friction, dt * 60);
+          car.vy *= Math.pow(P.friction, dt * 60);
+
+          // Torque feedback from wheels
+          const torque = (w.rx * col.ny - w.ry * col.nx) * 0.008;
+          car.spin += torque;
         }
       }
     }
   }
-}
 
-function drawTrack(left,right) {
-  const visible=new Set();
-  for (let i=Math.floor(left/BUCKET);i<=Math.floor(right/BUCKET);i++) {
-    for (const s of buckets.get(i)||[]) visible.add(s);
-  }
-  ctx.lineCap='round';ctx.lineJoin='round';
-  ctx.beginPath();
-  for (const s of visible) {
-    ctx.moveTo(s.x1,s.y1);ctx.lineTo(s.x2,s.y2);
-  }
-  ctx.strokeStyle='#ff1949';
-  ctx.lineWidth=5;
-  ctx.shadowColor='#ff1949';ctx.shadowBlur=15;
-  ctx.stroke();
-  ctx.shadowBlur=0;
-  ctx.strokeStyle='#ffc2d0';ctx.lineWidth=1.4;ctx.stroke();
-}
+  car.grounded = wheelContacts > 0;
 
-function diamond(x,y,size=8) {
-  ctx.beginPath();
-  ctx.moveTo(x,y-size);
-  ctx.lineTo(x+size*.7,y-2);
-  ctx.lineTo(x,y+size);
-  ctx.lineTo(x-size*.7,y-2);
-  ctx.closePath();
-  ctx.fillStyle='#57aaff';ctx.fill();
-  ctx.strokeStyle='#bbecff';ctx.lineWidth=1;ctx.stroke();
-  ctx.beginPath();ctx.moveTo(x,y-size);ctx.lineTo(x,y+size);
-  ctx.strokeStyle='#ffffff70';ctx.stroke();
-}
-function drawObjects(left,right) {
-  for (const gem of gems) {
-    if (!gem.taken && gem.x>left && gem.x<right) {
-      diamond(gem.x,gem.y);
+  if (car.grounded) {
+    car.groundTimer += dt;
+    // Safe landing evaluation
+    if (!wasGrounded && car.airTimer > 0.2) {
+      playSfx('land');
+      // Landing stunt bonus
+      const totalTurns = Math.floor((Math.abs(car.airRot) + 0.4) / TAU);
+      if (totalTurns > 0) {
+        const titles = [
+          'FLAWLESS FLIP!',
+          'DOUBLE SPIN!',
+          'TRIPLE ROTATION!',
+          'FLIP MAESTRO!',
+          'GODLIKE STUNT!'
+        ];
+        const tTitle = titles[Math.min(titles.length - 1, totalTurns - 1)];
+        const pts = totalTurns * 150 * totalTurns;
+        score += pts;
+        showStunt(tTitle, pts);
+        playSfx('flip');
+      }
+    }
+    car.airTimer = 0;
+    car.airRot = 0;
+  } else {
+    car.airTimer += dt;
+    car.groundTimer = 0;
+  }
+
+  // 3. Head & Chassis Lethal Collision
+  const headPos = {
+    x: car.x - sin * P.chassisH,
+    y: car.y + cos * P.chassisH - 12
+  };
+
+  for (const plat of platforms) {
+    if (plat.pts[1].x < car.x - 200 || plat.pts[0].x > car.x + 200) continue;
+    for (const seg of plat.segs) {
+      // Head hit
+      const hCol = checkCircleSegment(headPos.x, headPos.y, P.headR, seg);
+      if (hCol) {
+        triggerWipeout('Head smashed');
+        return;
+      }
     }
   }
+
+  // Saw collision
   for (const saw of saws) {
-    if (saw.x<left-40 || saw.x>right+40) continue;
-    ctx.save();ctx.translate(saw.x,saw.y);ctx.rotate(time*3);
-    ctx.beginPath();
-    for (let i=0;i<32;i++) {
-      const a=i*TAU/32,r=i%2?saw.r*.74:saw.r;
-      if (!i) ctx.moveTo(Math.cos(a)*r,Math.sin(a)*r);
-      else ctx.lineTo(Math.cos(a)*r,Math.sin(a)*r);
+    if (Math.hypot(car.x - saw.x, car.y - saw.y) < saw.r + 14) {
+      triggerWipeout('Sliced by hazard');
+      return;
     }
-    ctx.closePath();ctx.fillStyle='#ed3151';ctx.fill();
-    ctx.strokeStyle='#ffbac9';ctx.lineWidth=1;ctx.stroke();
-    ctx.beginPath();ctx.arc(0,0,5,0,TAU);
-    ctx.fillStyle='#151126';ctx.fill();ctx.restore();
+  }
+
+  // Fall into abyss
+  if (car.y > genY + 800) {
+    triggerWipeout('Fell into void');
+    return;
+  }
+
+  // 4. Gem Collections
+  for (const g of gems) {
+    if (!g.taken && Math.hypot(car.x - g.x, car.y - g.y) < 38) {
+      g.taken = true;
+      sessionGems++;
+      save.gems++;
+      score += 20;
+      playSfx('gem', { step: sessionGems % 6 });
+      commitSave();
+      $('gems').textContent = save.gems;
+    }
+  }
+
+  // Update Score & Distance
+  distanceM = Math.max(distanceM, Math.floor(car.x / 14));
+  $('score').textContent = score + distanceM;
+  $('dist').textContent = `${distanceM} M`;
+
+  // Dynamic Neon Trail
+  trails.push({ x: car.x, y: car.y, a: car.angle, life: 1 });
+  if (trails.length > 28) trails.shift();
+
+  // Infinite Generation ahead
+  if (genX < car.x + 3500) {
+    generateTrackUntil(car.x + 4500);
   }
 }
 
-function drawPlayer() {
-  const color=SKINS[store.skin].color;
-  ctx.save();
-  ctx.translate(body.x,body.y);ctx.rotate(body.a);
+function triggerWipeout(reason) {
+  if (state !== 'play') return;
+  state = 'over';
+  playSfx('crash');
+  try { navigator.vibrate?.([60, 40, 90]); } catch(e){}
 
-  for (const wheel of WHEELS) {
-    ctx.save();ctx.translate(wheel.x,wheel.y);ctx.rotate(wheelPhase);
-    ctx.beginPath();ctx.arc(0,0,wheel.r,0,TAU);
-    ctx.fillStyle='#101523';ctx.fill();
-    ctx.strokeStyle='#eef5ff';ctx.lineWidth=2;ctx.stroke();
-    ctx.beginPath();ctx.moveTo(-4,0);ctx.lineTo(4,0);
-    ctx.moveTo(0,-4);ctx.lineTo(0,4);
-    ctx.strokeStyle='#6ba9ff';ctx.lineWidth=1;ctx.stroke();
+  // Burst particles
+  for (let i = 0; i < 40; i++) {
+    const ang = Math.random() * TAU, spd = R(80, 520);
+    particles.push({
+      x: car.x, y: car.y,
+      vx: Math.cos(ang) * spd, vy: Math.sin(ang) * spd,
+      life: R(0.4, 0.9), color: i % 2 ? '#ff0055' : '#00f0ff',
+      sz: R(3, 8)
+    });
+  }
+
+  const finalVal = score + distanceM;
+  if (finalVal > save.best) {
+    save.best = finalVal;
+    commitSave();
+  }
+
+  $('finalScore').textContent = finalVal;
+  $('bestFinal').textContent = save.best;
+  $('runDist').textContent = `${distanceM}m`;
+  $('runGems').textContent = `+${sessionGems}`;
+  $('overScreen').classList.add('active');
+  $('hud').style.display = 'none';
+}
+
+// Drawing & Rendering
+function draw() {
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+
+  // Background gradient & city silhoutte
+  const bg = ctx.createLinearGradient(0, 0, 0, H);
+  bg.addColorStop(0, '#06010d');
+  bg.addColorStop(0.7, '#130424');
+  bg.addColorStop(1, '#260424');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, W, H);
+
+  // Camera Follow (Smooth dynamic zoom & forward lead like real Rider)
+  const fwdSpeed = Math.hypot(car.vx, car.vy);
+  const targetLead = Math.min(260, car.vx * 0.24);
+  cam.leadX += (targetLead - cam.leadX) * 0.08;
+  cam.x += (car.x + cam.leadX - cam.x) * 0.12;
+  cam.y += (car.y - cam.y) * 0.1;
+
+  // Zoom dynamic: zooms out as speed surges
+  const targetZoom = Math.max(0.48, Math.min(0.92, 600 / (H * 0.9 + fwdSpeed * 0.4)));
+  cam.zoom += (targetZoom - cam.zoom) * 0.05;
+
+  ctx.save();
+  ctx.translate(W * 0.32, H * 0.58);
+  ctx.scale(cam.zoom, cam.zoom);
+  ctx.translate(-cam.x, -cam.y);
+
+  // 1. Draw Neon Platforms (Filled polygonal blocks with thick neon edge glow)
+  for (const plat of platforms) {
+    if (plat.pts[1].x < cam.x - W/cam.zoom - 100 || plat.pts[0].x > cam.x + W/cam.zoom + 100) continue;
+    
+    // Solid fill
+    ctx.beginPath();
+    ctx.moveTo(plat.pts[0].x, plat.pts[0].y);
+    for (let i = 1; i < plat.pts.length; i++) ctx.lineTo(plat.pts[i].x, plat.pts[i].y);
+    ctx.closePath();
+    ctx.fillStyle = plat.theme.fill;
+    ctx.fill();
+
+    // Top Neon Glow Border
+    ctx.beginPath();
+    for (let i = 0; i < plat.pts.length - 2; i++) {
+      if (i === 0) ctx.moveTo(plat.pts[i].x, plat.pts[i].y);
+      ctx.lineTo(plat.pts[i+1].x, plat.pts[i+1].y);
+    }
+    ctx.strokeStyle = plat.theme.neon;
+    ctx.lineWidth = 6;
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.shadowColor = plat.theme.neon;
+    ctx.shadowBlur = 18;
+    ctx.stroke();
+
+    // Inner bright core
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 2;
+    ctx.shadowBlur = 0;
+    ctx.stroke();
+  }
+
+  // 2. Draw Saws
+  sawAngle += 0.08;
+  for (const s of saws) {
+    ctx.save();
+    ctx.translate(s.x, s.y);
+    ctx.rotate(sawAngle);
+    ctx.beginPath();
+    for (let i = 0; i < 24; i++) {
+      const a = (i / 24) * TAU;
+      const rad = i % 2 === 0 ? s.r : s.r * 0.72;
+      ctx.lineTo(Math.cos(a) * rad, Math.sin(a) * rad);
+    }
+    ctx.closePath();
+    ctx.fillStyle = '#ff0033';
+    ctx.shadowColor = '#ff0055'; ctx.shadowBlur = 14;
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.beginPath(); ctx.arc(0, 0, 8, 0, TAU); ctx.fillStyle = '#0a0314'; ctx.fill();
     ctx.restore();
   }
 
-  ctx.beginPath();
-  ctx.moveTo(-34,0);
-  ctx.quadraticCurveTo(-30,5,-23,5);
-  ctx.lineTo(23,5);
-  ctx.quadraticCurveTo(30,5,34,0);
-  ctx.strokeStyle=color;ctx.lineWidth=5;
-  ctx.shadowColor=color;ctx.shadowBlur=9;ctx.stroke();
-  ctx.shadowBlur=0;
-  ctx.strokeStyle='#ffffffb0';ctx.lineWidth=1;ctx.stroke();
-
-  ctx.translate(0,PHYS.headY);
-  ctx.beginPath();ctx.arc(0,0,PHYS.headRadius,0,TAU);
-  ctx.fillStyle=store.skin===3?'#1c2330':'#e52243';ctx.fill();
-  ctx.strokeStyle=color;ctx.lineWidth=1.2;ctx.stroke();
-
-  ctx.save();
-  ctx.beginPath();ctx.arc(0,0,PHYS.headRadius,0,TAU);ctx.clip();
-  ctx.strokeStyle='#270817aa';ctx.lineWidth=.75;
-  for (let i=0;i<8;i++) {
-    const a=i*TAU/8;
-    ctx.beginPath();ctx.moveTo(0,0);
-    ctx.lineTo(Math.cos(a)*12,Math.sin(a)*12);ctx.stroke();
-  }
-  for (const r of [5,9]) {
-    ctx.beginPath();ctx.arc(0,0,r,0,TAU);ctx.stroke();
-  }
-  ctx.restore();
-
-  for (const sign of [-1,1]) {
+  // 3. Draw Collectible Gems (Rider diamond style)
+  for (const g of gems) {
+    if (g.taken || g.x < cam.x - W/cam.zoom - 50 || g.x > cam.x + W/cam.zoom + 50) continue;
+    ctx.save();
+    ctx.translate(g.x, g.y);
+    ctx.shadowColor = '#00f0ff'; ctx.shadowBlur = 12;
     ctx.beginPath();
-    ctx.moveTo(sign*2,0);
-    ctx.lineTo(sign*9,-4);
-    ctx.quadraticCurveTo(sign*9,4,sign*4,4);
+    ctx.moveTo(0, -12); ctx.lineTo(9, -2); ctx.lineTo(0, 12); ctx.lineTo(-9, -2);
     ctx.closePath();
-    ctx.fillStyle='#fff';ctx.fill();
-    ctx.strokeStyle='#160d19';ctx.lineWidth=1;ctx.stroke();
+    ctx.fillStyle = '#00f0ff'; ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.restore();
   }
+
+  // 4. Vehicle Trail
+  for (let i = 0; i < trails.length; i++) {
+    const tr = trails[i];
+    const u = i / trails.length;
+    ctx.save();
+    ctx.translate(tr.x, tr.y);
+    ctx.rotate(tr.a);
+    ctx.fillStyle = `rgba(255, 0, 75, ${u * 0.4})`;
+    ctx.fillRect(-P.wheelDist, -6, P.wheelDist * 2, 8);
+    ctx.restore();
+  }
+
+  // 5. Draw Car & Spidey Skater
+  if (state !== 'over') {
+    ctx.save();
+    ctx.translate(car.x, car.y);
+    ctx.rotate(car.angle);
+
+    // Skateboard Deck (High neon)
+    ctx.beginPath();
+    ctx.roundRect(-P.wheelDist - 8, -4, (P.wheelDist + 8) * 2, 7, 3);
+    ctx.fillStyle = '#ff0055';
+    ctx.shadowColor = '#ff0055'; ctx.shadowBlur = 16;
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1.5; ctx.stroke();
+
+    // Wheels
+    for (const wx of [-P.wheelDist, P.wheelDist]) {
+      ctx.beginPath();
+      ctx.arc(wx, P.wheelR - 2, P.wheelR, 0, TAU);
+      ctx.fillStyle = '#0d111a';
+      ctx.fill();
+      ctx.strokeStyle = '#00f0ff';
+      ctx.lineWidth = 2.5;
+      ctx.shadowColor = '#00f0ff'; ctx.shadowBlur = 8;
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+    }
+
+    // Spider-Man Mask Head
+    ctx.save();
+    ctx.translate(0, -P.chassisH);
+    ctx.beginPath();
+    ctx.arc(0, 0, P.headR, 0, TAU);
+    ctx.fillStyle = '#e6002e';
+    ctx.shadowColor = '#ff0044'; ctx.shadowBlur = 10;
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1.5; ctx.stroke();
+
+    // Spider Eyes
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.ellipse(3, -2, 5, 3.2, 0.25, 0, TAU);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.ellipse(-4, -2, 4.5, 3, -0.25, 0, TAU);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.restore();
+    ctx.restore();
+  }
+
+  // 6. Particles
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.x += p.vx * 0.016; p.y += p.vy * 0.016;
+    p.life -= 0.02;
+    if (p.life <= 0) {
+      particles.splice(i, 1);
+      continue;
+    }
+    ctx.fillStyle = p.color;
+    ctx.shadowColor = p.color; ctx.shadowBlur = 10;
+    ctx.fillRect(p.x - p.sz/2, p.y - p.sz/2, p.sz, p.sz);
+    ctx.shadowBlur = 0;
+  }
+
   ctx.restore();
+}
 
-  if (diagnostics) {
-    ctx.strokeStyle='#62faff';ctx.lineWidth=.7;
-    for (const wheel of WHEELS) {
-      const p=localPoint(wheel.x,wheel.y);
-      ctx.beginPath();ctx.arc(p.x,p.y,wheel.r,0,TAU);ctx.stroke();
+// Main Loop
+let lastT = performance.now();
+function loop(now) {
+  const dt = Math.min(0.04, (now - lastT) / 1000);
+  lastT = now;
+
+  if (state === 'play') {
+    const sdt = dt / P.substeps;
+    for (let s = 0; s < P.substeps; s++) {
+      physicsStep(sdt);
     }
-    const p=localPoint(0,PHYS.headY);
-    ctx.beginPath();ctx.arc(p.x,p.y,PHYS.headRadius,0,TAU);ctx.stroke();
   }
+
+  draw();
+  requestAnimationFrame(loop);
 }
-function render() {
-  ctx.setTransform(dpr,0,0,dpr,0,0);
-  background();
+requestAnimationFrame(loop);
 
-  const anchorX=width*.31,anchorY=height*.64;
-  const sx=(Math.random()-.5)*shake;
-  const sy=(Math.random()-.5)*shake;
-  ctx.setTransform(
-    dpr*zoom,0,0,dpr*zoom,
-    dpr*(anchorX-camera.x*zoom+sx),
-    dpr*(anchorY-camera.y*zoom+sy)
-  );
-
-  const left=camera.x-anchorX/zoom-80;
-  const right=camera.x+(width-anchorX)/zoom+80;
-  drawTrack(left,right);
-  drawObjects(left,right);
-  if (state!=='over') drawPlayer();
-
-  for (const p of particles) {
-    ctx.globalAlpha=clamp(p.life*2,0,1);
-    ctx.fillStyle=p.color;ctx.fillRect(p.x-2,p.y-2,4,4);
-  }
-  ctx.globalAlpha=1;
-
-  $('score').textContent=score();
-  $('distance').textContent=`${Math.floor(distance())} m`;
-  $('best').textContent=`BEST ${store.best}`;
-  $('coins').textContent=`◆ ${store.gems}`;
-  $('toast').style.opacity=
-    state==='play'&&toastTime>0?String(Math.min(1,toastTime*3)):'0';
-
-  $('diagnostics').style.display=diagnostics?'block':'none';
-  if (diagnostics) {
-    $('diagnostics').textContent=
-      `seed ${trackSeed}\n`+
-      `speed ${Math.hypot(body.vx,body.vy).toFixed(1)}\n`+
-      `spin ${body.w.toFixed(2)} rad/s\n`+
-      `contacts ${body.contactCount}\n`+
-      `air ${airTime.toFixed(2)} s`;
-  }
-}
-
-function updateGarage() {
-  $('garageBalance').textContent=`◆ ${store.gems}`;
-  $('garageItems').replaceChildren();
-
-  SKINS.forEach((skin,i)=>{
-    const item=document.createElement('div');
-    item.className='skin';
-    const name=document.createElement('strong');
-    name.textContent=skin.name;name.style.color=skin.color;
-    const button=document.createElement('button');
-    button.textContent=store.skin===i?'SELECTED':
-      store.owned[i]?'USE':`◆ ${skin.cost}`;
-    button.disabled=store.skin===i||
-      (!store.owned[i]&&store.gems<skin.cost);
-    button.addEventListener('click',()=>{
-      if (!store.owned[i]) {
-        if (store.gems<skin.cost) return;
-        store.gems-=skin.cost;store.owned[i]=true;
-      }
-      store.skin=i;persist();updateGarage();
-    });
-    item.append(name,button);
-    $('garageItems').append(item);
-  });
-}
-
-function pause() {
-  if (state==='play') {
-    persist();setScreen('paused');elapsed=0;
-  }
-}
-function resume() {
-  if (state==='paused') {
-    unlockAudio();setScreen('play');
-    elapsed=0;lastFrame=performance.now();
-  }
-}
-function home() {
-  persist();setScreen('menu');elapsed=0;
-}
-
-$('startButton').onclick=()=>start(freshSeed());
-$('retryButton').onclick=()=>start(trackSeed);
-$('newButton').onclick=()=>start(freshSeed());
-$('homeButton').onclick=home;
-$('pauseHomeButton').onclick=home;
-$('pauseButton').onclick=pause;
-$('resumeButton').onclick=resume;
-$('garageButton').onclick=()=>{
-  updateGarage();setScreen('garage');
-};
-$('garageBackButton').onclick=()=>setScreen('menu');
-$('soundButton').onclick=()=>{
-  store.sound=!store.sound;
-  if (store.sound) unlockAudio();
-  persist();updateMenu();
-};
-
-canvas.addEventListener('pointerdown',e=>{
+// Input handling (Single Touch/Mouse Hold to accelerate & flip)
+function onDown(e) {
   e.preventDefault();
-  if (state!=='play') return;
-  unlockAudio();pointers.add(e.pointerId);
-  try { canvas.setPointerCapture(e.pointerId) } catch {}
-});
-function releasePointer(e) { pointers.delete(e.pointerId) }
-canvas.addEventListener('pointerup',releasePointer);
-canvas.addEventListener('pointercancel',releasePointer);
-canvas.addEventListener('lostpointercapture',releasePointer);
-addEventListener('pointerup',releasePointer);
-canvas.addEventListener('contextmenu',e=>e.preventDefault());
-
-const driveKeys=new Set(['Space','ArrowUp','ArrowRight','KeyW']);
-addEventListener('keydown',e=>{
-  if (e.target instanceof HTMLButtonElement) return;
-  if (driveKeys.has(e.code)) {
-    e.preventDefault();
-    if (state==='play') {
-      unlockAudio();heldKeys.add(e.code);
-    }
+  initAudio();
+  if (state === 'play') {
+    inputHeld = true;
+    $('tapHint').style.opacity = '0';
   }
-  if (e.repeat) return;
-  if (e.code==='KeyP'||e.code==='Escape') {
-    state==='paused'?resume():pause();
-  }
-  if (e.code==='KeyD') diagnostics=!diagnostics;
-});
-addEventListener('keyup',e=>heldKeys.delete(e.code));
-addEventListener('blur',()=>{clearInput();pause()});
-document.addEventListener('visibilitychange',()=>{
-  if (document.hidden) {clearInput();pause()}
-});
-addEventListener('pagehide',persist);
-
-function frame(now) {
-  const raw=Math.max(0,(now-lastFrame)/1000);
-  const dt=Math.min(.04,raw);
-  lastFrame=now;
-  time+=dt;
-
-  if (state==='play') {
-    elapsed+=dt;
-    let steps=0;
-    while (elapsed>=PHYS.dt && steps<12) {
-      physicsStep(PHYS.dt);
-      elapsed-=PHYS.dt;
-      steps++;
-      if (state!=='play') {elapsed=0;break}
-    }
-    if (steps===12) elapsed=Math.min(elapsed,PHYS.dt);
-
-    const targetX=body.x+clamp(body.vx*.12,0,85);
-    const targetY=body.y-72;
-    camera.x+=(targetX-camera.x)*(1-Math.exp(-7*dt));
-    camera.y+=(targetY-camera.y)*(1-Math.exp(-3.6*dt));
-  }
-
-  if (state!=='paused') {
-    toastTime=Math.max(0,toastTime-dt);
-    shake*=Math.exp(-9*dt);
-    for (const p of particles) {
-      p.x+=p.vx*dt;p.y+=p.vy*dt;
-      p.vy+=700*dt;p.life-=dt;
-    }
-    particles=particles.filter(p=>p.life>0);
-  }
-
-  render();
-  requestAnimationFrame(frame);
 }
+function onUp(e) {
+  inputHeld = false;
+}
+addEventListener('pointerdown', onDown);
+addEventListener('pointerup', onUp);
+addEventListener('pointercancel', onUp);
 
-// Static preview. Physics begins only when PLAY is pressed.
-trackSeed=freshSeed();
-resetTrack(trackSeed);
-body={
-  x:100,y:-18,vx:0,vy:0,a:0,w:0,
-  grounded:false,contactCount:0
+addEventListener('keydown', e => {
+  if (e.code === 'Space' || e.code === 'ArrowUp') {
+    initAudio();
+    if (state === 'play') inputHeld = true;
+  }
+});
+addEventListener('keyup', e => {
+  if (e.code === 'Space' || e.code === 'ArrowUp') inputHeld = false;
+});
+
+// UI Buttons
+$('playBtn').onclick = () => {
+  initAudio();
+  $('menuScreen').classList.remove('active');
+  $('hud').style.display = 'flex';
+  state = 'play';
+  resetRun(Math.floor(Math.random() * 1e9));
 };
-updateMenu();
-requestAnimationFrame(frame);
 
-// Reuse the existing external PWA service worker, if hosted securely.
-if ('serviceWorker' in navigator &&
-    (location.protocol==='https:' || location.hostname==='localhost')) {
-  addEventListener('load',()=>{
-    navigator.serviceWorker.register('./sw.js')
-      .then(reg=>reg.update())
-      .catch(()=>{});
-  });
-}
+$('retryBtn').onclick = () => {
+  initAudio();
+  $('overScreen').classList.remove('active');
+  $('hud').style.display = 'flex';
+  state = 'play';
+  resetRun(Math.floor(Math.random() * 1e9));
+};
+
+// Initial Menu Setup
+$('bestScoreMenu').textContent = save.best;
+$('totalGemsMenu').textContent = save.gems;
+
 })();
 </script>
 </body>
