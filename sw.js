@@ -1,4 +1,4 @@
-const CACHE = 'web-rider-v5';
+const CACHE = 'web-rider-v6';
 const FILES = ['./', 'index.html', 'game.js', 'manifest.json', 'icon.svg'];
 self.addEventListener('install', e => {
   self.skipWaiting();
