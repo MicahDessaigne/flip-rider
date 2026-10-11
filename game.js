@@ -795,4 +795,88 @@ function drawDead(u) {
   const y2 = y + rows.length * lh;
   text('SCORE ' + t, W / 2, y2 + 20 * u, 34 * u, '#fff', true, 900);
   const st = starsOf(t);
-  text('★'.repeat(st) + '☆'.repeat(3 - st) + '   RANK ' + rankOf(t) + (s.newBest ? '   NEW BEST
+  text('★'.repeat(st) + '☆'.repeat(3 - st) + '   RANK ' + rankOf(t) + (s.newBest ? '   NEW BEST!' : ''), W / 2, y2 + 48 * u, 19 * u, '#ffd84a', false, 800);
+  const by = y2 + 64 * u, bw = Math.min(150 * u, (W - 40) / 3 - 8);
+  btn(W / 2 - bw * 1.5 - 8, by, bw, 44 * u, 'RETRY', startRun, { fs: 17 * u });
+  btn(W / 2 - bw / 2, by, bw, 44 * u, 'GARAGE', () => { mode = 'garage'; }, { fs: 15 * u, dim: true });
+  btn(W / 2 + bw / 2 + 8, by, bw, 44 * u, 'MENU', () => { reset(); mode = 'menu'; }, { fs: 15 * u, dim: true });
+}
+function drawHUD(u) {
+  const top = SAT + 6, t = total(), mg = 16 + SAL;
+  text(String(t), W / 2, top + 40 * u, 42 * u, '#fff', true, 900);
+  text(dist() + ' m  ·  BEST ' + SV.best, W / 2, top + 60 * u, 13 * u, 'rgba(255,255,255,.7)', false, 700);
+  ctx.save(); ctx.textAlign = 'left'; ctx.fillStyle = '#fff'; ctx.font = '800 ' + 17 * u + 'px system-ui';
+  ctx.fillText('● ' + (SV.coins + s.coins), mg, top + 24 * u);
+  if (SV.shields > 0) { ctx.fillStyle = '#7fe8ff'; ctx.font = '700 ' + 13 * u + 'px system-ui'; ctx.fillText('SHIELD x' + SV.shields, mg, top + 44 * u); }
+  ctx.textAlign = 'right'; ctx.fillStyle = s.mult > 1 ? '#ffd84a' : 'rgba(255,255,255,.5)'; ctx.font = '900 ' + 26 * u + 'px system-ui';
+  ctx.fillText('x' + s.mult, W - 16, top + 28 * u);
+  if (s.mt > 0) { ctx.fillStyle = '#ffd84a'; ctx.fillRect(W - 16 - 60 * u, top + 36 * u, 60 * u * clamp(s.mt / 8, 0, 1), 4); }
+  ctx.restore();
+  if (msgT > 0) text(msg, W / 2, H * 0.3, 26 * u, '#fff', true, 900);
+  if (hintT > 0) {
+    text('HOLD = GAS   ·   IN THE AIR = BACKFLIP   ·   RELEASE = STOP SPINNING', W / 2, H * 0.86, 14 * u, 'rgba(255,255,255,' + clamp(hintT, 0, 1) * .8 + ')', false, 700);
+  }
+}
+
+function draw() {
+  const Z = ZOOM(), VW = W / Z, VH = H / Z, u = clamp(Math.min(W / 760, H / 420), .7, 1.4);
+  btns = [];
+  const ty = s.rail ? (s.rail.L.y0 - s.rail.L.R) - VH * 0.5 : s.y - VH * 0.6;
+  s.camX += ((s.x - VW * 0.28) - s.camX) * 0.14;
+  s.camY += (ty - s.camY) * 0.08;
+  let sx = 0, sy = 0;
+  if (shake > 0) { sx = (Math.random() - .5) * shake; sy = (Math.random() - .5) * shake; }
+  const cx = s.camX + sx, cy = s.camY + sy;
+
+  const bg = ctx.createLinearGradient(0, 0, 0, H);
+  bg.addColorStop(0, '#000'); bg.addColorStop(0.6, '#1c0207'); bg.addColorStop(1, '#4a0510');
+  ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H); ctx.shadowBlur = 0;
+  web();
+  ctx.fillStyle = 'rgba(255,40,60,0.18)'; ctx.beginPath(); ctx.arc(W * 0.78, H * 0.22, 70, 0, TAU); ctx.fill();
+  skyline(cx, 0.12, H * 0.64 - s.camY * 0.04, 90, 260, '#0e0307', false, false);
+  skyline(cx, 0.22, H * 0.74 - s.camY * 0.06, 60, 200, '#12040a', false, true);
+  skyline(cx, 0.4, H * 0.86 - s.camY * 0.1, 50, 170, '#0a0206', true, false);
+  speedLines();
+
+  ctx.save(); ctx.scale(Z, Z); ctx.translate(-cx, -cy);
+  drawTerrain(cx, cy, VW, VH);
+  drawPits(cx, VW);
+  drawMarks(cx, VW);
+  drawLoops(cx, VW);
+  drawPads(cx, VW);
+  drawHaz(cx, VW);
+  drawCoins(cx, VW);
+  for (const p of P) {
+    ctx.globalAlpha = Math.max(0, p.l / p.m);
+    ctx.fillStyle = p.c; ctx.shadowColor = p.c; ctx.shadowBlur = 8;
+    ctx.beginPath(); ctx.arc(p.x, p.y, p.z, 0, TAU); ctx.fill();
+  }
+  ctx.globalAlpha = 1; ctx.shadowBlur = 0;
+  drawBike();
+  ctx.restore();
+
+  const vg = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * .45, W / 2, H / 2, Math.max(W, H) * .75);
+  vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,.55)');
+  ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
+
+  if (mode === 'play') drawHUD(u);
+  else if (mode === 'menu') drawMenu(u);
+  else if (mode === 'garage') drawGarage(u);
+  else if (mode === 'dead') drawDead(u);
+}
+
+// ---------- loop ----------
+reset();
+let last = performance.now();
+function frame(t) {
+  const dt = Math.min(0.033, Math.max(0, (t - last) / 1000)); last = t;
+  extend(s.x + 3600);
+  updateHaz();
+  for (let i = 0; i < SUB; i++) step(dt / SUB);
+  updateFx(dt);
+  engineSound(); music();
+  draw();
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+})();
