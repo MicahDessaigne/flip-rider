@@ -1,7 +1,7 @@
 {
-  "name": "Web Rider",
-  "short_name": "WebRider",
-  "description": "Spider-Man style motorcycle trick game",
+  "name": "Flip Rider",
+  "short_name": "FlipRider",
+  "description": "Skateboard trick game with Spider-Man's head: flips, loops, moving platforms and obstacles",
   "start_url": "/",
   "display": "fullscreen",
   "orientation": "landscape",
