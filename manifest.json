@@ -1,13 +1,11 @@
 {
   "name": "Flip Rider",
   "short_name": "FlipRider",
-  "description": "Skateboard trick game with Spider-Man's head: flips, loops, moving platforms and obstacles",
-  "start_url": "/",
+  "description": "Spider-Man skateboard stunt game",
+  "start_url": "./",
   "display": "fullscreen",
   "orientation": "landscape",
-  "background_color": "#0a0a0a",
-  "theme_color": "#cc0000",
-  "icons": [
-    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
-  ]
+  "background_color": "#14061f",
+  "theme_color": "#ff2a3d",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
 }
