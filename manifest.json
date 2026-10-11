@@ -1,12 +1,12 @@
 {
   "name": "Web Rider",
-  "short_name": "Web Rider",
-  "start_url": "./index.html",
-  "scope": "./",
+  "short_name": "WebRider",
+  "description": "Spider-Man style motorcycle trick game",
+  "start_url": "/",
   "display": "fullscreen",
   "orientation": "landscape",
-  "background_color": "#000000",
-  "theme_color": "#000000",
+  "background_color": "#0a0a0a",
+  "theme_color": "#cc0000",
   "icons": [
     { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
   ]

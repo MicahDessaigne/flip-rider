@@ -1,13 +1,27 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" fill="#0a0205"/>
-  <g stroke="#e01a2b" stroke-width="4" fill="none" opacity=".5">
-    <path d="M0 0L300 300M0 0L400 150M0 0L150 400"/>
-    <path d="M70 0Q60 60 0 70M140 0Q120 120 0 140M210 0Q180 180 0 210"/>
-  </g>
-  <path d="M40 400 Q200 400 280 340 T480 300" stroke="#ff2a3d" stroke-width="12" fill="none"/>
-  <circle cx="190" cy="330" r="34" fill="#000" stroke="#e01a2b" stroke-width="10"/>
-  <circle cx="330" cy="330" r="34" fill="#000" stroke="#e01a2b" stroke-width="10"/>
-  <path d="M150 290L190 270H330L370 285" stroke="#e01a2b" stroke-width="12" fill="none" stroke-linecap="round"/>
-  <circle cx="260" cy="200" r="30" fill="#e01a2b"/>
-  <path d="M260 170V230M230 200H290" stroke="#000" stroke-width="3"/>
+  <rect width="512" height="512" rx="80" fill="#0a0a0a"/>
+  <circle cx="256" cy="180" r="120" fill="#cc0000" opacity="0.15"/>
+  <!-- Bike wheels -->
+  <circle cx="160" cy="340" r="60" fill="none" stroke="#cc0000" stroke-width="14"/>
+  <circle cx="160" cy="340" r="20" fill="#cc0000"/>
+  <circle cx="360" cy="340" r="60" fill="none" stroke="#cc0000" stroke-width="14"/>
+  <circle cx="360" cy="340" r="20" fill="#cc0000"/>
+  <!-- Bike frame -->
+  <line x1="160" y1="340" x2="260" y2="240" stroke="#ff3333" stroke-width="12" stroke-linecap="round"/>
+  <line x1="260" y1="240" x2="360" y2="340" stroke="#ff3333" stroke-width="12" stroke-linecap="round"/>
+  <line x1="160" y1="340" x2="310" y2="300" stroke="#ff3333" stroke-width="10" stroke-linecap="round"/>
+  <!-- Rider -->
+  <ellipse cx="240" cy="210" rx="22" ry="22" fill="#cc0000" stroke="#fff" stroke-width="4"/>
+  <ellipse cx="250" cy="265" rx="28" ry="35" fill="#cc0000"/>
+  <!-- Spider web lines on helmet -->
+  <line x1="240" y1="188" x2="240" y2="232" stroke="#fff" stroke-width="1.5" opacity="0.6"/>
+  <line x1="218" y1="210" x2="262" y2="210" stroke="#fff" stroke-width="1.5" opacity="0.6"/>
+  <line x1="224" y1="194" x2="256" y2="226" stroke="#fff" stroke-width="1" opacity="0.5"/>
+  <line x1="256" y1="194" x2="224" y2="226" stroke="#fff" stroke-width="1" opacity="0.5"/>
+  <!-- Eyes -->
+  <ellipse cx="232" cy="207" rx="7" ry="6" fill="white" opacity="0.9"/>
+  <ellipse cx="250" cy="207" rx="7" ry="6" fill="white" opacity="0.9"/>
+  <!-- Title -->
+  <text x="256" y="445" font-family="Arial Black, sans-serif" font-size="52" font-weight="900" fill="#cc0000" text-anchor="middle" letter-spacing="3">WEB</text>
+  <text x="256" y="495" font-family="Arial Black, sans-serif" font-size="38" font-weight="900" fill="#ffffff" text-anchor="middle" letter-spacing="6">RIDER</text>
 </svg>
