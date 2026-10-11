@@ -1,4 +1,4 @@
-const CACHE = 'flip-rider-v1'; // change to v2, v3... whenever you update files
+const CACHE = 'flip-rider-v2'; // change to v2, v3... whenever you update files
 const ASSETS = ['./', 'game.js', 'manifest.json', 'icon.svg'];
 
 self.addEventListener('install', e => {
