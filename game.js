@@ -1,20 +1,21 @@
 (() => {
 const cv = document.getElementById('c'), ctx = cv.getContext('2d');
-let W, H;
+const saEl = document.getElementById('sa');
+let W, H, SAT = 0;
 function resize() {
   const d = devicePixelRatio || 1;
   W = innerWidth; H = innerHeight;
   cv.width = W * d; cv.height = H * d;
   ctx.setTransform(d, 0, 0, d, 0, 0);
+  SAT = parseFloat(getComputedStyle(saEl).paddingTop) || 0;
 }
 addEventListener('resize', resize); resize();
 
 const TAU = Math.PI * 2;
 const RED = '#e01a2b', HOT = '#ff2a3d';
-// physics tuning
+// physics
 const G = 1500, ACC = 1150, MAXV = 1150, SPINA = 28, MAXW = 8.5;
-const R = 11, HALF = 26, INV_I = 1 / 1000, REST = 0.1;
-const SUB = 8;
+const R = 7, HALF = 17, INV_I = 1 / 430, REST = 0.1, SUB = 8;
 const hash = n => { n = Math.sin(n * 127.1) * 43758.5453; return n - Math.floor(n); };
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 
@@ -46,8 +47,7 @@ function beep(f0, f1, dur, type = 'sine', vol = 0.15) {
 }
 function engineSound() {
   if (!ac || !eng) return;
-  const t = ac.currentTime;
-  const on = s.started && !s.dead;
+  const t = ac.currentTime, on = s.started && !s.dead;
   engG.gain.setTargetAtTime(on ? (holding ? 0.07 : 0.025) : 0, t, 0.05);
   eng.frequency.setTargetAtTime(45 + Math.hypot(s.vx, s.vy) * 0.14, t, 0.08);
 }
@@ -68,9 +68,9 @@ const rnd = (a, b) => Math.floor(a + Math.random() * (b - a));
 
 function terrainReset() { hs = []; coins = []; cy0 = 0; maxY = 0; add(0); flat(110); }
 function coinRow(x0, x1) {
-  for (let x = x0; x < x1; x += 56) {
+  for (let x = x0; x < x1; x += 48) {
     const y = gY(x);
-    if (y !== null) coins.push({ x, y: y - 46, got: false });
+    if (y !== null) coins.push({ x, y: y - 30, got: false });
   }
 }
 function extend(toX) {
@@ -86,7 +86,7 @@ function extend(toX) {
       const gx0 = hs.length * STEP, ty = cy0;
       gap(n);
       for (let k = 0; k < 5; k++) {
-        coins.push({ x: gx0 + (k + .5) / 5 * n * STEP, y: ty - 50 - 70 * Math.sin(Math.PI * (k + .5) / 5), got: false });
+        coins.push({ x: gx0 + (k + .5) / 5 * n * STEP, y: ty - 40 - 60 * Math.sin(Math.PI * (k + .5) / 5), got: false });
       }
       cy0 += rnd(30, 80); add(cy0); ease(25, 40); flat(15);
       continue;
@@ -111,7 +111,8 @@ function slopeAt(x) {
 let s, holding = false, shake = 0, msg = '', msgT = 0, P = [];
 let best = +localStorage.getItem('wr_best') || 0;
 let coinTotal = +localStorage.getItem('wr_coins') || 0;
-const ZOOM = () => clamp(Math.min(H / 620, W / 820), 0.4, 1.3);
+// bike is ~45 units tall; showing ~540 units of height makes it about 1/12 of the screen
+const ZOOM = () => clamp(Math.min(H / 540, W / 720), 0.3, 1.6);
 
 function reset() {
   terrainReset(); extend(5000);
@@ -127,7 +128,7 @@ const score = () => Math.floor(Math.max(0, s.x) / 40) + s.bonus;
 function spark(x, y, vx, vy, c, n, life) {
   for (let i = 0; i < n; i++) P.push({
     x, y, vx: vx + (Math.random() - .5) * 220, vy: vy + (Math.random() - .5) * 220,
-    l: life * (.6 + Math.random() * .6), m: life, c, z: 2 + Math.random() * 3 });
+    l: life * (.6 + Math.random() * .6), m: life, c, z: 1.2 + Math.random() * 2 });
 }
 
 function press() {
@@ -146,8 +147,8 @@ addEventListener('keyup', e => { if (e.code === 'Space' || e.code === 'ArrowUp')
 function crash(why) {
   if (s.dead) return;
   s.dead = true; s.deadAt = performance.now(); s.why = why; holding = false; shake = 24;
-  spark(s.x, s.y - 30, 0, -150, HOT, 50, 1);
-  spark(s.x, s.y - 30, 0, -150, '#ffffff', 16, .7);
+  spark(s.x, s.y - 20, 0, -150, HOT, 50, 1);
+  spark(s.x, s.y - 20, 0, -150, '#ffffff', 16, .7);
   const sc = score();
   if (sc > best) { best = sc; localStorage.setItem('wr_best', best); }
   coinTotal += s.coins; localStorage.setItem('wr_coins', coinTotal);
@@ -169,7 +170,6 @@ function step(dt) {
   s.x += s.vx * dt; s.y += s.vy * dt; s.a += s.w * dt;
   if (s.nc === 0) { s.rot += s.w * dt; s.air += dt; }
 
-  // wheel contacts
   let nc = 0;
   const ca = Math.cos(s.a), sa = Math.sin(s.a);
   for (let i = 0; i < 2; i++) {
@@ -200,7 +200,7 @@ function step(dt) {
 
   // head / shoulder crash test
   const ca2 = Math.cos(s.a), sa2 = Math.sin(s.a);
-  const pts = [[10, -52, 7], [4, -40, 6]];
+  const pts = [[3, -39, 5], [0, -31, 4]];
   for (const [ox, oy, rad] of pts) {
     const hx = s.x + ox * ca2 - oy * sa2, hy = s.y + ox * sa2 + oy * ca2;
     const g = gY(hx);
@@ -216,21 +216,21 @@ function step(dt) {
       const f = Math.floor(Math.abs(s.rot) / TAU + 0.3);
       if (f > 0) {
         s.combo++;
-        const pts2 = f * 50 * s.combo;
-        s.bonus += pts2;
-        msg = (f > 1 ? f + 'x FLIP' : 'FLIP') + (s.combo > 1 ? ' · COMBO x' + s.combo : '') + ' +' + pts2;
+        const p2 = f * 50 * s.combo;
+        s.bonus += p2;
+        msg = (f > 1 ? f + 'x FLIP' : 'FLIP') + (s.combo > 1 ? ' · COMBO x' + s.combo : '') + ' +' + p2;
         msgT = 1.4;
         beep(600 + f * 150, 1200 + f * 150, .25, 'triangle', .18);
+        if (navigator.vibrate) navigator.vibrate(20);
       } else s.combo = 0;
     }
     s.air = 0; s.rot = 0;
   }
-  if (nc > 0) { s.rot = 0; }
+  if (nc > 0) s.rot = 0;
   s.nc = nc;
 
-  // coins
   for (const c of coins) {
-    if (!c.got && Math.abs(c.x - s.x) < 40 && Math.abs(c.y - (s.y - 20)) < 50) {
+    if (!c.got && Math.abs(c.x - s.x) < 30 && Math.abs(c.y - (s.y - 15)) < 36) {
       c.got = true; s.coins++;
       beep(900, 1500, .12, 'triangle', .12);
       spark(c.x, c.y, 0, -60, '#ffffff', 5, .35);
@@ -247,7 +247,7 @@ function updateFx(dt) {
   if (shake > 0) shake = Math.max(0, shake - dt * 40);
   if (msgT > 0) msgT -= dt;
   if (s.started && !s.dead) {
-    if (holding && s.nc > 0 && Math.random() < 0.6) spark(s.x - 34, s.y + 4, -s.vx * .25, -30, HOT, 1, .35);
+    if (holding && s.nc > 0 && Math.random() < 0.6) spark(s.x - 22, s.y + 2, -s.vx * .25, -30, HOT, 1, .35);
     const m = Math.floor(score() / 100);
     if (m > s.mile) { s.mile = m; msg = (m * 100) + ' !'; msgT = 1.2; beep(500, 1000, .3, 'square', .08); }
   }
@@ -288,6 +288,18 @@ function web() {
   }
   ctx.restore();
 }
+function speedLines() {
+  const sp = Math.hypot(s.vx, s.vy);
+  if (!s.started || s.dead || sp < 600) return;
+  const a = clamp((sp - 600) / 600, 0, 1) * 0.35;
+  ctx.strokeStyle = 'rgba(255,255,255,' + a + ')'; ctx.lineWidth = 1.5;
+  const t = performance.now() / 1000;
+  for (let i = 0; i < 14; i++) {
+    const y = hash(i * 3.1) * H;
+    const x = ((hash(i * 9.7) * W * 2 - t * (900 + i * 60)) % (W + 200) + (W + 200)) % (W + 200) - 100;
+    ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + 40 + sp * 0.04, y); ctx.stroke();
+  }
+}
 function drawTerrain(cx, cy, VW, VH) {
   const i0 = Math.max(0, Math.floor(cx / STEP) - 1), i1 = Math.min(hs.length - 1, Math.ceil((cx + VW) / STEP) + 1);
   let run = [];
@@ -299,7 +311,7 @@ function drawTerrain(cx, cy, VW, VH) {
       ctx.fillStyle = '#0a0305'; ctx.shadowBlur = 0; ctx.fill();
       ctx.beginPath();
       run.forEach((p, k) => k ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1]));
-      ctx.strokeStyle = HOT; ctx.shadowColor = HOT; ctx.shadowBlur = 16; ctx.lineWidth = 4; ctx.stroke();
+      ctx.strokeStyle = HOT; ctx.shadowColor = HOT; ctx.shadowBlur = 14; ctx.lineWidth = 3; ctx.stroke();
       ctx.shadowBlur = 0;
     }
     run = [];
@@ -312,11 +324,11 @@ function drawTerrain(cx, cy, VW, VH) {
 }
 function drawCoins(cx, cy, VW) {
   const t = performance.now() / 300;
-  ctx.fillStyle = '#fff'; ctx.shadowColor = HOT; ctx.shadowBlur = 12;
+  ctx.fillStyle = '#fff'; ctx.shadowColor = HOT; ctx.shadowBlur = 10;
   for (const c of coins) {
     if (c.got || c.x < cx - 30 || c.x > cx + VW + 30) continue;
-    const w = Math.abs(Math.cos(t + c.x * .01)) * 7 + 2;
-    ctx.beginPath(); ctx.ellipse(c.x - cx, c.y - cy, w, 8, 0, 0, TAU); ctx.fill();
+    const w = Math.abs(Math.cos(t + c.x * .01)) * 5 + 1.5;
+    ctx.beginPath(); ctx.ellipse(c.x - cx, c.y - cy, w, 6, 0, 0, TAU); ctx.fill();
   }
   ctx.shadowBlur = 0;
 }
@@ -328,59 +340,55 @@ function drawRider(cx, cy) {
   ctx.translate(0, R);
   ctx.lineCap = 'round'; ctx.lineJoin = 'round';
   const red = s.dead ? '#777' : RED;
-  ctx.shadowColor = red; ctx.shadowBlur = 10;
+  ctx.shadowColor = red; ctx.shadowBlur = 8;
 
-  for (const wx of [-26, 26]) {
-    ctx.save(); ctx.translate(wx, -11); ctx.rotate(s.wa);
-    ctx.fillStyle = '#0a0a0a'; ctx.strokeStyle = red; ctx.lineWidth = 2.5;
-    ctx.beginPath(); ctx.arc(0, 0, 10.5, 0, TAU); ctx.fill(); ctx.stroke();
-    ctx.lineWidth = 1.5; ctx.beginPath();
-    ctx.moveTo(-9, 0); ctx.lineTo(9, 0); ctx.moveTo(0, -9); ctx.lineTo(0, 9); ctx.stroke();
+  for (const wx of [-17, 17]) {
+    ctx.save(); ctx.translate(wx, -7); ctx.rotate(s.wa);
+    ctx.fillStyle = '#0a0a0a'; ctx.strokeStyle = red; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(0, 0, 6.6, 0, TAU); ctx.fill(); ctx.stroke();
+    ctx.lineWidth = 1; ctx.beginPath();
+    ctx.moveTo(-5.5, 0); ctx.lineTo(5.5, 0); ctx.moveTo(0, -5.5); ctx.lineTo(0, 5.5); ctx.stroke();
     ctx.restore();
   }
-  ctx.beginPath(); ctx.moveTo(-39, -23); ctx.lineTo(-32, -17); ctx.lineTo(32, -17); ctx.lineTo(39, -23);
-  ctx.strokeStyle = '#0a0a0a'; ctx.lineWidth = 7; ctx.stroke();
-  ctx.strokeStyle = red; ctx.lineWidth = 2.5; ctx.stroke();
-  ctx.fillStyle = '#161616'; ctx.strokeStyle = red; ctx.lineWidth = 2;
-  ctx.fillRect(-24, -31, 18, 13); ctx.strokeRect(-24, -31, 18, 13);
-  ctx.beginPath(); ctx.moveTo(-24, -24); ctx.lineTo(-40, -19); ctx.strokeStyle = '#999'; ctx.lineWidth = 3; ctx.stroke();
-  ctx.strokeStyle = '#222'; ctx.lineWidth = 4;
-  ctx.beginPath(); ctx.moveTo(26, -11); ctx.lineTo(20, -41); ctx.stroke();
-  ctx.strokeStyle = red; ctx.lineWidth = 2.5;
-  ctx.beginPath(); ctx.moveTo(15, -43); ctx.lineTo(26, -43); ctx.stroke();
+  // skateboard deck with kicktails
+  ctx.beginPath(); ctx.moveTo(-25, -15); ctx.lineTo(-20, -11); ctx.lineTo(20, -11); ctx.lineTo(25, -14);
+  ctx.strokeStyle = '#0a0a0a'; ctx.lineWidth = 4.5; ctx.stroke();
+  ctx.strokeStyle = red; ctx.lineWidth = 1.6; ctx.stroke();
+  // engine block, tank, exhaust
+  ctx.fillStyle = '#161616'; ctx.strokeStyle = red; ctx.lineWidth = 1.4;
+  ctx.fillRect(-9, -19, 12, 7); ctx.strokeRect(-9, -19, 12, 7);
+  ctx.fillStyle = red; ctx.beginPath(); ctx.ellipse(4, -21, 6, 3, -0.15, 0, TAU); ctx.fill();
+  ctx.strokeStyle = '#999'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(-9, -15); ctx.lineTo(-24, -12); ctx.stroke();
+  // short raked fork + small bar
+  ctx.strokeStyle = '#222'; ctx.lineWidth = 2.5;
+  ctx.beginPath(); ctx.moveTo(17, -7); ctx.lineTo(12, -22); ctx.stroke();
+  ctx.strokeStyle = red; ctx.lineWidth = 1.6;
+  ctx.beginPath(); ctx.moveTo(9, -24); ctx.lineTo(14, -24); ctx.stroke();
+  ctx.strokeStyle = '#111'; ctx.lineWidth = 2.5;
+  ctx.beginPath(); ctx.moveTo(-15, -22); ctx.lineTo(-5, -23); ctx.stroke();
 
-  ctx.shadowBlur = 4;
-  ctx.strokeStyle = red; ctx.lineWidth = 6;
-  ctx.beginPath(); ctx.moveTo(-4, -37); ctx.lineTo(5, -28); ctx.lineTo(11, -19); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(-4, -37); ctx.lineTo(-9, -28); ctx.lineTo(-14, -19); ctx.stroke();
-  ctx.strokeStyle = '#111'; ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.moveTo(8, -22); ctx.lineTo(11, -19); ctx.moveTo(-12, -22); ctx.lineTo(-14, -19); ctx.stroke();
-  ctx.strokeStyle = red; ctx.lineWidth = 9;
-  ctx.beginPath(); ctx.moveTo(-4, -37); ctx.lineTo(6, -54); ctx.stroke();
-  ctx.strokeStyle = '#111'; ctx.lineWidth = 3;
-  ctx.beginPath(); ctx.moveTo(-8, -38); ctx.lineTo(1, -53); ctx.stroke();
-  ctx.fillStyle = '#111'; ctx.beginPath(); ctx.arc(2, -46, 3, 0, TAU); ctx.fill();
-  ctx.strokeStyle = red; ctx.lineWidth = 5;
-  ctx.beginPath(); ctx.moveTo(6, -52); ctx.lineTo(18, -48); ctx.lineTo(21, -43); ctx.stroke();
-  ctx.fillStyle = red; ctx.beginPath(); ctx.arc(10, -63, 8.5, 0, TAU); ctx.fill();
-  ctx.strokeStyle = '#111'; ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(10, -71.5); ctx.lineTo(10, -54.5);
-  ctx.moveTo(1.5, -63); ctx.lineTo(18.5, -63);
-  ctx.moveTo(4, -69); ctx.lineTo(16, -57);
-  ctx.moveTo(16, -69); ctx.lineTo(4, -57);
-  ctx.stroke();
-  ctx.beginPath(); ctx.arc(10, -63, 5, 0, TAU); ctx.stroke();
-  ctx.fillStyle = '#fff'; ctx.strokeStyle = '#111'; ctx.lineWidth = 1.2; ctx.shadowBlur = 0;
-  for (const ex of [8, 14]) {
-    ctx.beginPath(); ctx.ellipse(ex, -64, 3.2, 1.8, ex === 8 ? 0.45 : -0.45, 0, TAU); ctx.fill(); ctx.stroke();
-  }
+  // tiny crouched rider
+  ctx.shadowBlur = 3;
+  ctx.strokeStyle = red; ctx.lineWidth = 3.2;
+  ctx.beginPath(); ctx.moveTo(-7, -24); ctx.lineTo(-2, -18); ctx.lineTo(3, -12); ctx.stroke();
+  ctx.lineWidth = 4.2;
+  ctx.beginPath(); ctx.moveTo(-7, -24); ctx.lineTo(0, -33); ctx.stroke();
+  ctx.strokeStyle = '#111'; ctx.lineWidth = 1.4;
+  ctx.beginPath(); ctx.moveTo(-8.5, -24); ctx.lineTo(-1.5, -32.5); ctx.stroke();
+  ctx.strokeStyle = red; ctx.lineWidth = 2.3;
+  ctx.beginPath(); ctx.moveTo(0, -32); ctx.lineTo(7, -29); ctx.lineTo(10, -25); ctx.stroke();
+  ctx.fillStyle = red; ctx.beginPath(); ctx.arc(3, -39, 4.6, 0, TAU); ctx.fill();
+  ctx.strokeStyle = '#111'; ctx.lineWidth = 0.7;
+  ctx.beginPath(); ctx.moveTo(3, -43.6); ctx.lineTo(3, -34.4); ctx.moveTo(-1.6, -39); ctx.lineTo(7.6, -39); ctx.stroke();
+  ctx.fillStyle = '#fff'; ctx.shadowBlur = 0;
+  for (const ex of [1.6, 5.2]) { ctx.beginPath(); ctx.ellipse(ex, -39.5, 1.7, 1, ex < 3 ? 0.45 : -0.45, 0, TAU); ctx.fill(); }
   ctx.restore();
 }
 
 function draw() {
   const Z = ZOOM(), VW = W / Z, VH = H / Z;
-  s.camX = s.x - VW * 0.3;
+  s.camX = s.x - VW * 0.28;
   s.camY += ((s.y - VH * 0.62) - s.camY) * 0.08;
   let sx = 0, sy = 0;
   if (shake > 0) { sx = (Math.random() - .5) * shake; sy = (Math.random() - .5) * shake; }
@@ -394,6 +402,7 @@ function draw() {
   ctx.fillStyle = 'rgba(255,40,60,0.18)'; ctx.beginPath(); ctx.arc(W * 0.78, H * 0.22, 70, 0, TAU); ctx.fill();
   skyline(cx, 0.15, H * 0.70 - s.camY * 0.05, 60, 200, '#12040a', false);
   skyline(cx, 0.35, H * 0.82 - s.camY * 0.10, 50, 180, '#0a0206', true);
+  speedLines();
 
   ctx.save(); ctx.scale(Z, Z);
   drawTerrain(cx, cy, VW, VH);
@@ -407,32 +416,33 @@ function draw() {
   drawRider(cx, cy);
   ctx.restore();
 
-  // HUD
+  // HUD (safe-area aware)
+  const top = SAT + 8;
   ctx.textAlign = 'center';
   ctx.fillStyle = '#fff'; ctx.shadowColor = HOT; ctx.shadowBlur = 14;
-  ctx.font = '900 52px system-ui,sans-serif'; ctx.fillText(score(), W / 2, 76);
-  ctx.shadowBlur = 0; ctx.font = '700 15px system-ui'; ctx.fillStyle = 'rgba(255,255,255,.7)';
-  ctx.fillText('BEST ' + best, W / 2, 102);
-  ctx.textAlign = 'left'; ctx.font = '800 18px system-ui'; ctx.fillStyle = '#fff';
-  ctx.fillText('● ' + (coinTotal + s.coins), 16, 34);
+  ctx.font = '900 44px system-ui,sans-serif'; ctx.fillText(score(), W / 2, top + 44);
+  ctx.shadowBlur = 0; ctx.font = '700 14px system-ui'; ctx.fillStyle = 'rgba(255,255,255,.7)';
+  ctx.fillText('BEST ' + best, W / 2, top + 64);
+  ctx.textAlign = 'left'; ctx.font = '800 17px system-ui'; ctx.fillStyle = '#fff';
+  ctx.fillText('● ' + (coinTotal + s.coins), 16 + 0, top + 24);
   ctx.textAlign = 'center';
   if (msgT > 0) {
     ctx.fillStyle = '#fff'; ctx.shadowColor = HOT; ctx.shadowBlur = 20;
-    ctx.font = '900 30px system-ui'; ctx.fillText(msg, W / 2, H * 0.28); ctx.shadowBlur = 0;
+    ctx.font = '900 28px system-ui'; ctx.fillText(msg, W / 2, H * 0.28); ctx.shadowBlur = 0;
   }
   if (!s.started) {
     ctx.fillStyle = '#fff'; ctx.shadowColor = HOT; ctx.shadowBlur = 20;
-    ctx.font = '900 40px system-ui'; ctx.fillText('WEB RIDER', W / 2, H * 0.3); ctx.shadowBlur = 0;
-    ctx.font = '700 20px system-ui'; ctx.fillText('HOLD TO ACCELERATE', W / 2, H * 0.78);
-    ctx.font = '500 15px system-ui'; ctx.fillStyle = 'rgba(255,255,255,.65)';
-    ctx.fillText('HOLD IN THE AIR TO BACKFLIP · LAND ON YOUR WHEELS', W / 2, H * 0.83);
+    ctx.font = '900 38px system-ui'; ctx.fillText('WEB RIDER', W / 2, H * 0.3); ctx.shadowBlur = 0;
+    ctx.font = '700 20px system-ui'; ctx.fillText('TAP TO START · HOLD TO ACCELERATE', W / 2, H * 0.8);
+    ctx.font = '500 14px system-ui'; ctx.fillStyle = 'rgba(255,255,255,.65)';
+    ctx.fillText('HOLD IN THE AIR TO BACKFLIP · LAND ON YOUR WHEELS', W / 2, H * 0.86);
   }
   if (s.dead) {
     ctx.fillStyle = 'rgba(0,0,0,.6)'; ctx.fillRect(0, 0, W, H);
     ctx.fillStyle = HOT; ctx.shadowColor = HOT; ctx.shadowBlur = 25;
-    ctx.font = '900 48px system-ui'; ctx.fillText('WIPED OUT', W / 2, H * 0.42);
+    ctx.font = '900 46px system-ui'; ctx.fillText('WIPED OUT', W / 2, H * 0.42);
     ctx.shadowBlur = 0; ctx.fillStyle = '#fff'; ctx.font = '700 20px system-ui';
-    ctx.fillText(s.why + ' · SCORE ' + score(), W / 2, H * 0.49);
+    ctx.fillText(s.why + ' · SCORE ' + score() + ' · BEST ' + best, W / 2, H * 0.49);
     ctx.fillStyle = HOT; ctx.font = '600 18px system-ui'; ctx.fillText('TAP TO RETRY', W / 2, H * 0.58);
   }
 }
