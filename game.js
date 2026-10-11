@@ -1,543 +1,356 @@
-// ==========================================
-// RIDER PWA: ENHANCED CYBERPUNK PHYSICS ENGINE
-// ==========================================
-
-const canvas = document.getElementById('c');
-const ctx = canvas.getContext('2d');
-
-let W = innerWidth;
-let H = innerHeight;
-let dpr = window.devicePixelRatio || 1;
-
+(() => {
+const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+let W, H;
 function resize() {
-  dpr = window.devicePixelRatio || 1;
-  W = innerWidth;
-  H = innerHeight;
-  canvas.width = W * dpr;
-  canvas.height = H * dpr;
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const d = devicePixelRatio || 1;
+  W = innerWidth; H = innerHeight;
+  cv.width = W * d; cv.height = H * d;
+  ctx.setTransform(d, 0, 0, d, 0, 0);
 }
-window.addEventListener('resize', resize);
-resize();
+addEventListener('resize', resize); resize();
 
-// ------------------------------------------
-// SYNTHETIC SOUND ENGINE (Pure Web Audio)
-// ------------------------------------------
-class SoundFX {
-  constructor() {
-    this.ctx = null;
-  }
-  init() {
-    if (!this.ctx) {
-      const AudioCtx = window.AudioContext || window.webkitAudioContext;
-      if (AudioCtx) this.ctx = new AudioCtx();
-    }
-    if (this.ctx && this.ctx.state === 'suspended') {
-      this.ctx.resume();
-    }
-  }
-  playEngine(speedRatio) {
-    if (!this.ctx) return;
-    // Engine sound is generated via subtle oscillator modulation
-  }
-  flipPing(count) {
-    if (!this.ctx) return;
-    const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
-    const freq = 520 + count * 180;
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(freq * 1.5, this.ctx.currentTime + 0.12);
-    gain.gain.setValueAtTime(0.18, this.ctx.currentTime);
-    gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.18);
-    osc.connect(gain);
-    gain.connect(this.ctx.destination);
-    osc.start();
-    osc.stop(this.ctx.currentTime + 0.2);
-  }
-  gem() {
-    if (!this.ctx) return;
-    const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
-    osc.type = 'triangle';
-    osc.frequency.setValueAtTime(980, this.ctx.currentTime);
-    osc.frequency.setValueAtTime(1310, this.ctx.currentTime + 0.08);
-    gain.gain.setValueAtTime(0.12, this.ctx.currentTime);
-    gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.25);
-    osc.connect(gain);
-    gain.connect(this.ctx.destination);
-    osc.start();
-    osc.stop(this.ctx.currentTime + 0.26);
-  }
-  land() {
-    if (!this.ctx) return;
-    const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(120, this.ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(40, this.ctx.currentTime + 0.08);
-    gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
-    gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.1);
-    osc.connect(gain);
-    gain.connect(this.ctx.destination);
-    osc.start();
-    osc.stop(this.ctx.currentTime + 0.11);
-  }
-  crash() {
-    if (!this.ctx) return;
-    const bufferSize = this.ctx.sampleRate * 0.4;
-    const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
-    const data = buffer.getChannelData(0);
-    for (let i = 0; i < bufferSize; i++) {
-      data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.2));
-    }
-    const noise = this.ctx.createBufferSource();
-    noise.buffer = buffer;
-    const filter = this.ctx.createBiquadFilter();
-    filter.type = 'lowpass';
-    filter.frequency.setValueAtTime(600, this.ctx.currentTime);
-    filter.frequency.linearRampToValueAtTime(100, this.ctx.currentTime + 0.35);
-    const gain = this.ctx.createGain();
-    gain.gain.setValueAtTime(0.35, this.ctx.currentTime);
-    gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.38);
-    noise.connect(filter);
-    filter.connect(gain);
-    gain.connect(this.ctx.destination);
-    noise.start();
-  }
+const TAU = Math.PI * 2;
+const RED = '#e01a2b', HOT = '#ff2a3d';
+const G = 1600, ACC = 950, MAXV = 1000, FR = 0.3, SPIN = 7.5;
+const angDiff = (a, b) => { let d = (a - b) % TAU; if (d > Math.PI) d -= TAU; if (d < -Math.PI) d += TAU; return d; };
+const hash = n => { n = Math.sin(n * 127.1) * 43758.5453; return n - Math.floor(n); };
+
+// ---------- audio ----------
+let ac = null;
+function initAudio() {
+  if (!ac) { const A = window.AudioContext || window.webkitAudioContext; if (A) ac = new A(); }
+  if (ac && ac.state === 'suspended') ac.resume();
 }
-const sfx = new SoundFX();
-
-// ------------------------------------------
-// PROCEDURAL STITCHED TRACK GENERATOR
-// ------------------------------------------
-class TrackSegment {
-  constructor(p1, p2, type = 'line', cp1 = null, cp2 = null) {
-    this.p1 = p1; // {x, y}
-    this.p2 = p2;
-    this.type = type; // 'line' | 'bezier'
-    this.cp1 = cp1;
-    this.cp2 = cp2;
-    this.length = Math.hypot(p2.x - p1.x, p2.y - p1.y);
-  }
+function beep(f0, f1, dur, type = 'sine', vol = 0.15) {
+  if (!ac) return;
+  const o = ac.createOscillator(), g = ac.createGain(), t = ac.currentTime;
+  o.type = type;
+  o.frequency.setValueAtTime(f0, t);
+  o.frequency.exponentialRampToValueAtTime(f1, t + dur);
+  g.gain.setValueAtTime(vol, t);
+  g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+  o.connect(g); g.connect(ac.destination);
+  o.start(t); o.stop(t + dur);
 }
 
-class TrackManager {
-  constructor() {
-    this.segments = [];
-    this.gems = [];
-    this.lastEnd = { x: -300, y: 400 };
-    this.generatedUpToX = -300;
-  }
+// ---------- terrain (height array, null = void) ----------
+const STEP = 8;
+let hs = [], cy0 = 0, maxY = 0;
+const add = y => { hs.push(y); if (y !== null && y > maxY) maxY = y; };
+const flat = (n, sl = 0) => { for (let i = 0; i < n; i++) { cy0 += sl * STEP; add(cy0); } };
+const ease = (n, dy) => { const y0 = cy0; for (let i = 1; i <= n; i++) { cy0 = y0 + dy * (1 - Math.cos(Math.PI * i / n)) / 2; add(cy0); } };
+const ramp = (n, h) => { const y0 = cy0; for (let i = 1; i <= n; i++) { const t = i / n; cy0 = y0 - h * t * t; add(cy0); } };
+const gap = n => { for (let i = 0; i < n; i++) add(null); };
+const rnd = (a, b) => Math.floor(a + Math.random() * (b - a));
 
-  reset() {
-    this.segments = [];
-    this.gems = [];
-    this.lastEnd = { x: -400, y: 400 };
-    this.generatedUpToX = -400;
-
-    // Runway spawn pad
-    this.addStraight(800, 0);
-    this.extend(2000);
-  }
-
-  addSegment(p2, type = 'line', cp1 = null, cp2 = null) {
-    const seg = new TrackSegment({ ...this.lastEnd }, p2, type, cp1, cp2);
-    this.segments.push(seg);
-    this.lastEnd = { ...p2 };
-    this.generatedUpToX = p2.x;
-  }
-
-  addStraight(length, angleRad = 0) {
-    const end = {
-      x: this.lastEnd.x + Math.cos(angleRad) * length,
-      y: this.lastEnd.y + Math.sin(angleRad) * length
-    };
-    this.addSegment(end, 'line');
-  }
-
-  addBezier(dx, dy, c1x, c1y, c2x, c2y) {
-    const start = this.lastEnd;
-    const end = { x: start.x + dx, y: start.y + dy };
-    const cp1 = { x: start.x + c1x, y: start.y + c1y };
-    const cp2 = { x: start.x + c2x, y: start.y + c2y };
-    this.addSegment(end, 'bezier', cp1, cp2);
-  }
-
-  spawnGem(x, y) {
-    this.gems.push({ x, y, collected: false, pulse: Math.random() * 6 });
-  }
-
-  extend(targetX) {
-    while (this.generatedUpToX < targetX) {
-      const choice = Math.random();
-
-      if (choice < 0.28) {
-        // Roll & Hill (gentle roller-coaster wave)
-        const len = 450 + Math.random() * 300;
-        const depth = 80 + Math.random() * 110;
-        this.addBezier(len, 0, len * 0.35, depth, len * 0.65, -depth);
-        this.spawnGem(this.lastEnd.x - len * 0.5, this.lastEnd.y - depth * 0.6);
-      } else if (choice < 0.52) {
-        // Launch Ramp + Chasm Gap (Jump)
-        const rampLen = 300 + Math.random() * 150;
-        const rampUp = -(120 + Math.random() * 80);
-        this.addBezier(rampLen, rampUp, rampLen * 0.4, 0, rampLen * 0.8, rampUp);
-
-        // Gap into air
-        const gapSize = 160 + Math.random() * 120;
-        const dropDown = 80 + Math.random() * 140;
-        
-        // Spawn gem arc in mid-air
-        for (let i = 1; i <= 3; i++) {
-          this.spawnGem(this.lastEnd.x + (gapSize * i) / 4, this.lastEnd.y - 60 + i * 15);
-        }
-
-        // Catch ramp after gap
-        this.lastEnd = { x: this.lastEnd.x + gapSize, y: this.lastEnd.y + dropDown };
-        this.addStraight(220, 0.25);
-      } else if (choice < 0.76) {
-        // Neon Loop-the-Loop
-        const r = 160 + Math.random() * 50;
-        const loopStart = { ...this.lastEnd };
-        
-        // Entry into loop
-        this.addBezier(r * 1.1, -r * 0.4, r * 0.6, 0, r * 0.9, -r * 0.2);
-        // Peak of loop
-        this.addBezier(0, -r * 1.5, -r * 0.5, -r * 0.6, 0, -r * 1.2);
-        // Descent loop exit
-        this.addBezier(r * 1.2, r * 1.9, r * 0.5, -r * 0.4, r * 0.8, r * 1.2);
-        
-        this.spawnGem(loopStart.x + r * 0.7, loopStart.y - r * 1.4);
-      } else {
-        // Speed Flat with Neon Speed Bump
-        const flat = 250 + Math.random() * 200;
-        this.addStraight(flat, 0.05);
-        this.spawnGem(this.lastEnd.x - flat * 0.5, this.lastEnd.y - 30);
-      }
-    }
-
-    // Prune segments that are far behind player to keep 60 FPS
-    const cutoffX = targetX - 3500;
-    this.segments = this.segments.filter(s => Math.max(s.p1.x, s.p2.x) > cutoffX);
-    this.gems = this.gems.filter(g => g.x > cutoffX && !g.collected);
-  }
-
-  // Find track altitude and surface normal at specific coordinate X
-  sampleAt(x) {
-    for (let i = this.segments.length - 1; i >= 0; i--) {
-      const s = this.segments[i];
-      const minX = Math.min(s.p1.x, s.p2.x);
-      const maxX = Math.max(s.p1.x, s.p2.x);
-
-      if (x >= minX - 1 && x <= maxX + 1) {
-        if (s.type === 'line') {
-          const ratio = (x - s.p1.x) / (s.p2.x - s.p1.x || 1);
-          const y = s.p1.y + ratio * (s.p2.y - s.p1.y);
-          const dx = s.p2.x - s.p1.x;
-          const dy = s.p2.y - s.p1.y;
-          const angle = Math.atan2(dy, dx);
-          return { y, angle, dx, dy, valid: true };
-        } else if (s.type === 'bezier') {
-          // Accurate 10-step Bezier numeric probe
-          let bestT = 0.5;
-          let minDiff = Infinity;
-          for (let step = 0; step <= 20; step++) {
-            const t = step / 20;
-            const it = 1 - t;
-            const bx = it*it*it*s.p1.x + 3*it*it*t*s.cp1.x + 3*it*t*t*s.cp2.x + t*t*t*s.p2.x;
-            const diff = Math.abs(bx - x);
-            if (diff < minDiff) { minDiff = diff; bestT = t; }
-          }
-          const t = bestT;
-          const it = 1 - t;
-          const y = it*it*it*s.p1.y + 3*it*it*t*s.cp1.y + 3*it*t*t*s.cp2.y + t*t*t*s.p2.y;
-          const dxdt = 3*it*it*(s.cp1.x - s.p1.x) + 6*it*t*(s.cp2.x - s.cp1.x) + 3*t*t*(s.p2.x - s.cp2.x);
-          const dydt = 3*it*it*(s.cp1.y - s.p1.y) + 6*it*t*(s.cp2.y - s.cp1.y) + 3*t*t*(s.p2.y - s.cp2.y);
-          const angle = Math.atan2(dydt, dxdt);
-          return { y, angle, dx: dxdt, dy: dydt, valid: true };
-        }
-      }
-    }
-    return { y: 20000, angle: 0, dx: 1, dy: 0, valid: false }; // Abyss gap
+function terrainReset() { hs = []; cy0 = 0; maxY = 0; add(0); flat(110); }
+function extend(toX) {
+  while (hs.length * STEP < toX) {
+    const dist = hs.length * STEP, r = Math.random();
+    const dir = cy0 > 200 ? -1 : cy0 < -200 ? 1 : (Math.random() < 0.5 ? -1 : 1);
+    if (r < 0.3) { ease(rnd(30, 55), dir * rnd(40, 120)); flat(rnd(5, 15)); }
+    else if (r < 0.55) { const d = rnd(30, 80); ease(25, d); ease(25, -d); flat(rnd(4, 10)); }
+    else if (r < 0.88 && dist > 2000) {
+      flat(8); ramp(30, rnd(60, 110)); gap(rnd(16, 30));
+      cy0 += rnd(30, 80); add(cy0); ease(25, 40); flat(15);
+    } else { ease(20, dir * rnd(30, 90)); flat(rnd(15, 30)); }
   }
 }
-
-// ------------------------------------------
-// PARTICLES & SPECIAL EFFECTS
-// ------------------------------------------
-class ParticleSystem {
-  constructor() {
-    this.particles = [];
-  }
-  emitSpark(x, y, vx, vy, color) {
-    this.particles.push({
-      x, y,
-      vx: vx + (Math.random() - 0.5) * 120,
-      vy: vy + (Math.random() - 0.5) * 120,
-      life: 0.35 + Math.random() * 0.25,
-      maxLife: 0.5,
-      size: 2.5 + Math.random() * 3,
-      color
-    });
-  }
-  emitExplosion(x, y, color) {
-    for (let i = 0; i < 45; i++) {
-      const angle = Math.random() * Math.PI * 2;
-      const speed = 80 + Math.random() * 340;
-      this.particles.push({
-        x, y,
-        vx: Math.cos(angle) * speed,
-        vy: Math.sin(angle) * speed,
-        life: 0.6 + Math.random() * 0.5,
-        maxLife: 1.0,
-        size: 3 + Math.random() * 4,
-        color
-      });
-    }
-  }
-  update(dt) {
-    for (let i = this.particles.length - 1; i >= 0; i--) {
-      const p = this.particles[i];
-      p.life -= dt;
-      p.x += p.vx * dt;
-      p.y += p.vy * dt;
-      p.vy += 400 * dt; // gravity on sparks
-      if (p.life <= 0) this.particles.splice(i, 1);
-    }
-  }
-  draw(ctx, camX, camY) {
-    ctx.save();
-    for (const p of this.particles) {
-      const alpha = Math.max(0, p.life / p.maxLife);
-      ctx.fillStyle = p.color;
-      ctx.globalAlpha = alpha;
-      ctx.shadowColor = p.color;
-      ctx.shadowBlur = 8;
-      ctx.beginPath();
-      ctx.arc(p.x - camX, p.y - camY, p.size, 0, Math.PI * 2);
-      ctx.fill();
-    }
-    ctx.restore();
-  }
+function gY(x) {
+  const f = x / STEP, i = Math.floor(f);
+  if (i < 0) return hs[0];
+  if (i + 1 >= hs.length) return hs[hs.length - 1];
+  const a = hs[i], b = hs[i + 1];
+  if (a === null || b === null) return null;
+  return a + (b - a) * (f - i);
+}
+function slopeAt(x) {
+  const a = gY(x - 4), b = gY(x + 4);
+  return (a === null || b === null) ? 0 : (b - a) / 8;
 }
 
-// ------------------------------------------
-// PLAYER BIKE WITH 2-WHEEL RAYCAST PHYSICS
-// ------------------------------------------
-class Bike {
-  constructor() {
-    this.reset();
-  }
+// ---------- state ----------
+let s, holding = false, shake = 0, msg = '', msgT = 0, P = [];
+let best = +localStorage.getItem('wr_best') || 0;
+const ZOOM = () => Math.max(0.6, Math.min(1.3, H / 650));
 
-  reset() {
-    this.x = 0;
-    this.y = 380;
-    this.vx = 250;
-    this.vy = 0;
-    this.angle = 0;
-    this.angularVel = 0;
-    this.wheelDist = 42; // Distance between front & back wheels
-    this.radius = 12;
+function reset() {
+  terrainReset(); extend(4000);
+  P = []; shake = 0; msg = ''; msgT = 0;
+  const VH = H / ZOOM();
+  s = { x: 0, y: 0, v: 250, vx: 250, vy: 0, a: 0, g: true, spin: 0, bonus: 0,
+        dead: false, started: false, deadAt: 0, why: '', camX: -200, camY: -VH * 0.62 };
+}
+const score = () => Math.floor(s.x / 40) + s.bonus;
 
-    this.grounded = true;
-    this.isDead = false;
-    this.started = false;
+function spark(x, y, vx, vy, c, n, life) {
+  for (let i = 0; i < n; i++) P.push({
+    x, y, vx: vx + (Math.random() - .5) * 220, vy: vy + (Math.random() - .5) * 220,
+    l: life * (.6 + Math.random() * .6), m: life, c, z: 2 + Math.random() * 3 });
+}
 
-    this.flips = 0;
-    this.airTime = 0;
-    this.rotationAccumulator = 0;
-    this.combo = 1;
-    this.gemsCollected = 0;
-  }
+function press() {
+  initAudio();
+  if (s.dead) { if (performance.now() - s.deadAt > 500) reset(); return; }
+  s.started = true; holding = true;
+}
+const release = () => { holding = false; };
+cv.addEventListener('pointerdown', e => { e.preventDefault(); press(); });
+addEventListener('pointerup', release);
+addEventListener('pointercancel', release);
+addEventListener('keydown', e => { if (e.code === 'Space') { e.preventDefault(); if (!e.repeat) press(); } });
+addEventListener('keyup', e => { if (e.code === 'Space') release(); });
 
-  getRearPos() {
-    const half = this.wheelDist / 2;
-    return {
-      x: this.x - Math.cos(this.angle) * half,
-      y: this.y - Math.sin(this.angle) * half
-    };
-  }
+function crash(why) {
+  if (s.dead) return;
+  s.dead = true; s.deadAt = performance.now(); s.why = why; holding = false; shake = 22;
+  spark(s.x, s.y - 20, 0, -150, HOT, 45, 1);
+  spark(s.x, s.y - 20, 0, -150, '#ffffff', 14, .7);
+  const sc = score();
+  if (sc > best) { best = sc; localStorage.setItem('wr_best', best); }
+  beep(160, 30, .4, 'sawtooth', .25);
+  if (navigator.vibrate) navigator.vibrate([80, 40, 120]);
+}
 
-  getFrontPos() {
-    const half = this.wheelDist / 2;
-    return {
-      x: this.x + Math.cos(this.angle) * half,
-      y: this.y + Math.sin(this.angle) * half
-    };
-  }
-
-  update(dt, holding, track, particles, onFlip, onCrash) {
-    if (!this.started || this.isDead) return;
-
-    const GRAV = 1450;
-    const ACCEL = 880;
-    const MAX_SPEED = 1050;
-    const FLIP_TORQUE = 9.8; // Snappy neon backflip speed
-
-    const rear = this.getRearPos();
-    const front = this.getFrontPos();
-
-    const rearSample = track.sampleAt(rear.x);
-    const frontSample = track.sampleAt(front.x);
-
-    const rearGroundY = rearSample.y - this.radius;
-    const frontGroundY = frontSample.y - this.radius;
-
-    const rearContact = rear.y >= rearGroundY - 4 && rearSample.valid;
-    const frontContact = front.y >= frontGroundY - 4 && frontSample.valid;
-
-    // Check if player fell into the kill-zone void
-    if (this.y > 1400) {
-      this.isDead = true;
-      sfx.crash();
-      onCrash('FELL INTO THE VOID');
-      return;
-    }
-
-    if (rearContact || frontContact) {
-      // ON GROUND
-      if (!this.grounded) {
-        // Landing event
-        sfx.land();
-        this.grounded = true;
-
-        // Process flip scoring
-        const fullSpins = Math.floor(Math.abs(this.rotationAccumulator) / (Math.PI * 1.9));
-        if (fullSpins > 0) {
-          const pts = fullSpins * 100 * this.combo;
-          this.combo++;
-          onFlip(fullSpins, pts);
-          for (let k = 0; k < 15; k++) {
-            particles.emitSpark(this.x, this.y, this.vx * 0.4, -120, '#00ffff');
-          }
-        }
-        this.rotationAccumulator = 0;
-      }
-
-      // Calculate track angle from wheels
-      const targetAngle = Math.atan2(frontGroundY - rearGroundY, this.wheelDist);
-      const angleErr = Math.atan2(Math.sin(targetAngle - this.angle), Math.cos(targetAngle - this.angle));
-
-      // CRASH CONDITION: upside down landing
-      if (Math.abs(angleErr) > 1.25) {
-        this.isDead = true;
-        sfx.crash();
-        particles.emitExplosion(this.x, this.y, '#ff0055');
-        onCrash('HEAD CRASH');
-        return;
-      }
-
-      // Snap alignment to terrain
-      this.angle += angleErr * Math.min(1, 16 * dt);
-      this.angularVel = 0;
-
-      // Forward drive acceleration along the slope
-      let forward = holding ? ACCEL : 0;
-      // Gravity component pushing down the slope
-      const slopeForce = GRAV * Math.sin(this.angle);
-
-      let forwardSpeed = Math.hypot(this.vx, this.vy);
-      if (Math.cos(this.angle) * this.vx < 0) forwardSpeed = -forwardSpeed;
-
-      forwardSpeed += (forward + slopeForce) * dt;
-      forwardSpeed -= forwardSpeed * 0.18 * dt; // Rolling friction
-      forwardSpeed = Math.max(120, Math.min(MAX_SPEED, forwardSpeed));
-
-      this.vx = Math.cos(this.angle) * forwardSpeed;
-      this.vy = Math.sin(this.angle) * forwardSpeed;
-
-      // Follow track contour
-      this.x += this.vx * dt;
-      const curTrack = track.sampleAt(this.x);
-      this.y = curTrack.y - this.radius - 2;
-
-      // Exhaust sparks when holding boost
-      if (holding && Math.random() < 0.6) {
-        particles.emitSpark(rear.x, rear.y, -this.vx * 0.4, -50, '#ff00aa');
-      }
-
-      // Launch off ramps
-      if (curTrack.dy < -20 && this.vx > 450) {
-        // High momentum ramp exit
-        this.grounded = false;
-        this.vy -= 120;
-      }
+function step(dt) {
+  if (!s.started || s.dead) return;
+  if (s.g) {
+    const th = Math.atan(slopeAt(s.x));
+    s.v += G * Math.sin(th) * dt;
+    if (holding) s.v += ACC * dt;
+    s.v -= s.v * FR * dt;
+    s.v = Math.max(80, Math.min(MAXV, s.v));
+    s.vx = s.v * Math.cos(th); s.vy = s.v * Math.sin(th);
+    const nx = s.x + s.vx * dt;
+    const yBall = s.y + s.vy * dt + 0.5 * G * dt * dt;
+    const gy = gY(nx);
+    s.x = nx;
+    if (gy === null || gy > yBall) {
+      s.g = false; s.y = yBall; s.vy += G * dt; s.spin = 0;
     } else {
-      // IN AIR
-      this.grounded = false;
-      this.vy += GRAV * dt;
-      this.x += this.vx * dt;
-      this.y += this.vy * dt;
-
-      // Mid-Air Backflip Mechanic
-      if (holding) {
-        this.angularVel = -FLIP_TORQUE;
-        // Jet thruster trail while backflipping in air
-        particles.emitSpark(rear.x, rear.y, -this.vx * 0.2, 50, '#00ffff');
-      } else {
-        this.angularVel *= 0.94; // Air resistance damping
-      }
-
-      const deltaRot = this.angularVel * dt;
-      this.angle += deltaRot;
-      this.rotationAccumulator += deltaRot;
-
-      // Sound ding for every completed 360 in the air
-      const currentSpins = Math.floor(Math.abs(this.rotationAccumulator) / (Math.PI * 2));
-      if (currentSpins > this.flips) {
-        this.flips = currentSpins;
-        sfx.flipPing(this.flips);
-      }
+      s.y = gy;
+      s.a += angDiff(th, s.a) * Math.min(1, 25 * dt);
+      if (holding && Math.random() < 0.5) spark(s.x - 30, s.y - 14, -s.vx * .3, -40, HOT, 1, .35);
     }
+  } else {
+    s.vy += G * dt; s.x += s.vx * dt; s.y += s.vy * dt;
+    if (holding) { s.a -= SPIN * dt; s.spin -= SPIN * dt; }
+    const gy = gY(s.x);
+    if (gy !== null && s.y >= gy) {
+      const th = Math.atan(slopeAt(s.x));
+      if (Math.abs(angDiff(s.a, th)) < 1.0) {
+        s.y = gy; s.g = true;
+        s.v = Math.max(80, s.vx * Math.cos(th) + s.vy * Math.sin(th));
+        s.a = th;
+        spark(s.x, s.y, s.vx * .2, -120, HOT, 12, .4);
+        beep(110, 40, .1, 'sine', .2);
+        const f = Math.round(Math.abs(s.spin) / TAU);
+        if (f > 0) {
+          const pts = f * f * 25; s.bonus += pts;
+          msg = (f > 1 ? f + 'x FLIP! +' : 'FLIP! +') + pts; msgT = 1.3;
+          beep(600 + f * 150, 1200 + f * 150, .22, 'triangle', .18);
+        }
+      } else crash(Math.abs(angDiff(s.a, th)) > 2 ? 'HEAD FIRST!' : 'BAD LANDING');
+    } else if (s.y > maxY + 500) crash('FELL INTO THE VOID');
+  }
+}
 
-    // Check Gem Pickups
-    for (const gem of track.gems) {
-      if (!gem.collected && Math.hypot(gem.x - this.x, gem.y - this.y) < 38) {
-        gem.collected = true;
-        this.gemsCollected++;
-        sfx.gem();
-        particles.emitExplosion(gem.x, gem.y, '#00ffcc');
+function updateFx(dt) {
+  for (let i = P.length - 1; i >= 0; i--) {
+    const p = P[i];
+    p.l -= dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 500 * dt;
+    if (p.l <= 0) P.splice(i, 1);
+  }
+  if (shake > 0) shake = Math.max(0, shake - dt * 40);
+  if (msgT > 0) msgT -= dt;
+}
+
+// ---------- drawing ----------
+function skyline(camX, par, baseY, hmin, hmax, fill, windows) {
+  const bw = 70, off = camX * par, i0 = Math.floor(off / bw);
+  for (let i = i0; i * bw - off < W + bw; i++) {
+    const h = hmin + hash(i + par * 100) * (hmax - hmin), x = i * bw - off;
+    ctx.fillStyle = fill; ctx.fillRect(x, baseY - h, bw - 6, h + H);
+    if (windows) {
+      ctx.fillStyle = 'rgba(255,60,70,0.55)';
+      for (let k = 0; k < 6; k++) {
+        const wx = x + 8 + (k % 3) * 18, wy = baseY - h + 14 + Math.floor(k / 3) * 26;
+        if (hash(i * 7 + k) > 0.55) ctx.fillRect(wx, wy, 8, 12);
       }
     }
   }
-
-  draw(ctx, camX, camY, neonColor) {
-    ctx.save();
-    ctx.translate(this.x - camX, this.y - camY);
-    ctx.rotate(this.angle);
-
-    const half = this.wheelDist / 2;
-    const mainColor = this.isDead ? '#ff1744' : neonColor;
-
-    ctx.shadowColor = mainColor;
-    ctx.shadowBlur = 18;
-    ctx.strokeStyle = mainColor;
-    ctx.fillStyle = mainColor;
-    ctx.lineWidth = 3.5;
-
-    // Glowing Neon Wheels
+}
+function web() {
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255,255,255,0.13)'; ctx.lineWidth = 1.2;
+  const rays = 6, R = Math.min(300, W * 0.6);
+  for (let k = 0; k < rays; k++) {
+    const a = (k / (rays - 1)) * Math.PI / 2;
+    ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(Math.cos(a) * R, Math.sin(a) * R); ctx.stroke();
+  }
+  for (let r = R / 5; r <= R; r += R / 5) {
     ctx.beginPath();
-    ctx.arc(-half, 0, this.radius, 0, Math.PI * 2);
-    ctx.arc(half, 0, this.radius, 0, Math.PI * 2);
+    for (let k = 0; k < rays - 1; k++) {
+      const a1 = (k / (rays - 1)) * Math.PI / 2, a2 = ((k + 1) / (rays - 1)) * Math.PI / 2, m = (a1 + a2) / 2;
+      if (k === 0) ctx.moveTo(Math.cos(a1) * r, Math.sin(a1) * r);
+      ctx.quadraticCurveTo(Math.cos(m) * r * .86, Math.sin(m) * r * .86, Math.cos(a2) * r, Math.sin(a2) * r);
+    }
     ctx.stroke();
+  }
+  ctx.restore();
+}
+function drawTerrain(cx, cy, VW, VH) {
+  const i0 = Math.max(0, Math.floor(cx / STEP) - 1), i1 = Math.min(hs.length - 1, Math.ceil((cx + VW) / STEP) + 1);
+  let run = [];
+  const flush = () => {
+    if (run.length >= 2) {
+      ctx.beginPath(); ctx.moveTo(run[0][0], VH + 400);
+      for (const p of run) ctx.lineTo(p[0], p[1]);
+      ctx.lineTo(run[run.length - 1][0], VH + 400); ctx.closePath();
+      ctx.fillStyle = '#0a0305'; ctx.shadowBlur = 0; ctx.fill();
+      ctx.beginPath();
+      run.forEach((p, k) => k ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1]));
+      ctx.strokeStyle = HOT; ctx.shadowColor = HOT; ctx.shadowBlur = 16; ctx.lineWidth = 4; ctx.stroke();
+      ctx.shadowBlur = 0;
+    }
+    run = [];
+  };
+  for (let i = i0; i <= i1; i++) {
+    const h = hs[i];
+    if (h === null) flush(); else run.push([i * STEP - cx, h - cy]);
+  }
+  flush();
+}
 
-    // Wheel hubs
-    ctx.beginPath();
-    ctx.arc(-half, 0, 3, 0, Math.PI * 2);
-    ctx.arc(half, 0, 3, 0, Math.PI  2);
-    ctx.fill();
+function drawRider(cx, cy) {
+  ctx.save();
+  ctx.translate(s.x - cx, s.y - cy);
+  ctx.translate(0, -18); ctx.rotate(s.a); ctx.translate(0, 18);
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  const red = s.dead ? '#777' : RED;
+  ctx.shadowColor = red; ctx.shadowBlur = 10;
 
-    // Futuristic Rider Cyber-Chassis
-    ctx.beginPath();
-    ctx.moveTo(-half, 0);
-    ctx.lineTo(-6, -14);
-    ctx.lineTo(12, -14);
-    ctx.lineTo(half, 0);
-    ctx.lineTo(-4, -4);
-    ctx.closePath();
-    ctx.stroke();
+  // wheels
+  for (const wx of [-26, 26]) {
+    ctx.fillStyle = '#0a0a0a'; ctx.strokeStyle = red; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.arc(wx, -11, 10.5, 0, TAU); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = red; ctx.beginPath(); ctx.arc(wx, -11, 3, 0, TAU); ctx.fill();
+  }
+  // skateboard deck with kicktails
+  ctx.beginPath(); ctx.moveTo(-39, -23); ctx.lineTo(-32, -17); ctx.lineTo(32, -17); ctx.lineTo(39, -23);
+  ctx.strokeStyle = '#0a0a0a'; ctx.lineWidth = 7; ctx.stroke();
+  ctx.strokeStyle = red; ctx.lineWidth = 2.5; ctx.stroke();
+  // engine block + exhaust
+  ctx.fillStyle = '#161616'; ctx.strokeStyle = red; ctx.lineWidth = 2;
+  ctx.fillRect(-24, -31, 18, 13); ctx.strokeRect(-24, -31, 18, 13);
+  ctx.beginPath(); ctx.moveTo(-24, -24); ctx.lineTo(-40, -19); ctx.strokeStyle = '#999'; ctx.lineWidth = 3; ctx.stroke();
+  // front fork + handlebar
+  ctx.strokeStyle = '#222'; ctx.lineWidth = 4;
+  ctx.beginPath(); ctx.moveTo(26, -11); ctx.lineTo(20, -41); ctx.stroke();
+  ctx.strokeStyle = red; ctx.lineWidth = 2.5;
+  ctx.beginPath(); ctx.moveTo(15, -43); ctx.lineTo(26, -43); ctx.stroke();
 
-    // Neon Cockpit Glow
-    ctx.fillStyle = '#ffffff';
-    ctx.shadowCo
+  ctx.shadowBlur = 4;
+  // legs
+  ctx.strokeStyle = red; ctx.lineWidth = 6;
+  ctx.beginPath(); ctx.moveTo(-4, -37); ctx.lineTo(5, -28); ctx.lineTo(11, -19); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(-4, -37); ctx.lineTo(-9, -28); ctx.lineTo(-14, -19); ctx.stroke();
+  ctx.strokeStyle = '#111'; ctx.lineWidth = 2; // black boot tips
+  ctx.beginPath(); ctx.moveTo(8, -22); ctx.lineTo(11, -19); ctx.moveTo(-12, -22); ctx.lineTo(-14, -19); ctx.stroke();
+  // torso
+  ctx.strokeStyle = red; ctx.lineWidth = 9;
+  ctx.beginPath(); ctx.moveTo(-4, -37); ctx.lineTo(6, -54); ctx.stroke();
+  ctx.strokeStyle = '#111'; ctx.lineWidth = 3; // black side stripe
+  ctx.beginPath(); ctx.moveTo(-8, -38); ctx.lineTo(1, -53); ctx.stroke();
+  ctx.fillStyle = '#111'; ctx.beginPath(); ctx.arc(2, -46, 3, 0, TAU); ctx.fill(); // chest spider mark
+  // arms
+  ctx.strokeStyle = red; ctx.lineWidth = 5;
+  ctx.beginPath(); ctx.moveTo(6, -52); ctx.lineTo(18, -48); ctx.lineTo(21, -43); ctx.stroke();
+  // head / mask
+  ctx.fillStyle = red; ctx.beginPath(); ctx.arc(10, -63, 8.5, 0, TAU); ctx.fill();
+  ctx.strokeStyle = '#111'; ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(10, -71.5); ctx.lineTo(10, -54.5);
+  ctx.moveTo(1.5, -63); ctx.lineTo(18.5, -63);
+  ctx.moveTo(4, -69); ctx.lineTo(16, -57);
+  ctx.moveTo(16, -69); ctx.lineTo(4, -57);
+  ctx.stroke();
+  ctx.beginPath(); ctx.arc(10, -63, 5, 0, TAU); ctx.stroke();
+  ctx.fillStyle = '#fff'; ctx.strokeStyle = '#111'; ctx.lineWidth = 1.2; ctx.shadowBlur = 0;
+  for (const ex of [8, 14]) {
+    ctx.beginPath(); ctx.ellipse(ex, -64, 3.2, 1.8, ex === 8 ? 0.45 : -0.45, 0, TAU); ctx.fill(); ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function draw() {
+  const Z = ZOOM(), VW = W / Z, VH = H / Z;
+  // camera
+  s.camX = s.x - VW * 0.3;
+  s.camY += ((s.y - VH * 0.62) - s.camY) * 0.08;
+  let sx = 0, sy = 0;
+  if (shake > 0) { sx = (Math.random() - .5) * shake; sy = (Math.random() - .5) * shake; }
+  const cx = s.camX + sx, cy = s.camY + sy;
+
+  // background
+  const bg = ctx.createLinearGradient(0, 0, 0, H);
+  bg.addColorStop(0, '#000000'); bg.addColorStop(0.6, '#1c0207'); bg.addColorStop(1, '#4a0510');
+  ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+  ctx.shadowBlur = 0;
+  web();
+  ctx.fillStyle = 'rgba(255,40,60,0.18)'; ctx.beginPath(); ctx.arc(W * 0.78, H * 0.22, 70, 0, TAU); ctx.fill();
+  skyline(cx, 0.15, H * 0.70 - s.camY * 0.05, 60, 200, '#12040a', false);
+  skyline(cx, 0.35, H * 0.82 - s.camY * 0.10, 50, 180, '#0a0206', true);
+
+  // world
+  ctx.save(); ctx.scale(Z, Z);
+  drawTerrain(cx, cy, VW, VH);
+  // particles
+  for (const p of P) {
+    ctx.globalAlpha = Math.max(0, p.l / p.m);
+    ctx.fillStyle = p.c; ctx.shadowColor = p.c; ctx.shadowBlur = 8;
+    ctx.beginPath(); ctx.arc(p.x - cx, p.y - cy, p.z, 0, TAU); ctx.fill();
+  }
+  ctx.globalAlpha = 1; ctx.shadowBlur = 0;
+  if (!s.dead) drawRider(cx, cy);
+  ctx.restore();
+
+  // HUD
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#fff'; ctx.shadowColor = HOT; ctx.shadowBlur = 14;
+  ctx.font = '900 52px system-ui,sans-serif'; ctx.fillText(score(), W / 2, 76);
+  ctx.shadowBlur = 0; ctx.font = '700 15px system-ui'; ctx.fillStyle = 'rgba(255,255,255,.7)';
+  ctx.fillText('BEST ' + best, W / 2, 102);
+  if (msgT > 0) {
+    ctx.fillStyle = '#fff'; ctx.shadowColor = HOT; ctx.shadowBlur = 20;
+    ctx.font = '900 32px system-ui'; ctx.fillText(msg, W / 2, H * 0.28); ctx.shadowBlur = 0;
+  }
+  if (!s.started) {
+    ctx.fillStyle = '#fff'; ctx.font = '800 26px system-ui'; ctx.fillText('WEB RIDER', W / 2, H * 0.3);
+    ctx.font = '700 20px system-ui'; ctx.fillText('HOLD TO ACCELERATE', W / 2, H * 0.78);
+    ctx.font = '500 15px system-ui'; ctx.fillStyle = 'rgba(255,255,255,.65)';
+    ctx.fillText('HOLD IN THE AIR TO BACKFLIP · LAND ON YOUR WHEELS', W / 2, H * 0.83);
+  }
+  if (s.dead) {
+    ctx.fillStyle = 'rgba(0,0,0,.65)'; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = HOT; ctx.shadowColor = HOT; ctx.shadowBlur = 25;
+    ctx.font = '900 48px system-ui'; ctx.fillText('WIPED OUT', W / 2, H * 0.42);
+    ctx.shadowBlur = 0; ctx.fillStyle = '#fff'; ctx.font = '700 20px system-ui';
+    ctx.fillText(s.why + ' · SCORE ' + score(), W / 2, H * 0.49);
+    ctx.fillStyle = HOT; ctx.font = '600 18px system-ui'; ctx.fillText('TAP TO RETRY', W / 2, H * 0.58);
+  }
+}
+
+// ---------- loop ----------
+reset();
+let last = performance.now();
+function frame(t) {
+  const dt = Math.min(0.05, Math.max(0, (t - last) / 1000)); last = t;
+  extend(s.x + W * 2 + 1500);
+  for (let i = 0; i < 4; i++) step(dt / 4);
+  updateFx(dt);
+  draw();
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+})();
